@@ -1,0 +1,21 @@
+resources:
+  jobs:
+    register_metric_views:
+      name: "Register Metric Views"
+
+      description: >
+        Discovers metric view YAML definitions in fixtures/metric_views/
+        and registers them as UC metric views in the target catalog and schema.
+
+      parameters:
+        - name: catalog_use
+          default: ${var.catalog}
+        - name: schema_use
+          default: ${resources.schemas.wb_metric_views_schema.name}
+
+      tasks:
+        - task_key: register_views
+          notebook_task:
+            notebook_path: ../src/register_metric_views.py
+            source: WORKSPACE
+          disable_auto_optimization: false

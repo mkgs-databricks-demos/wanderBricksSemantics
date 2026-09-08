@@ -1,0 +1,93 @@
+version: 1.1
+
+source: "samples.wanderbricks.properties"
+
+comment: "Property listing metrics for WanderBricks vacation rentals"
+
+dimensions:
+  - name: property_type
+    expr: property_type
+    comment: Type of property (e.g., house, apartment)
+    display_name: Property Type
+    synonyms:
+      - listing type
+      - accommodation type
+
+  - name: bedrooms
+    expr: bedrooms
+    comment: Number of bedrooms
+    display_name: Bedrooms
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+    synonyms:
+      - bedroom count
+      - number of bedrooms
+
+  - name: bathrooms
+    expr: bathrooms
+    comment: Number of bathrooms
+    display_name: Bathrooms
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+    synonyms:
+      - bathroom count
+
+  - name: created_at
+    expr: created_at
+    comment: Date the property was listed
+    display_name: Listed Date
+    format:
+      type: date
+      date_format: locale_short_month
+      leading_zeros: false
+    synonyms:
+      - listing date
+      - date added
+
+measures:
+  - name: total_properties
+    expr: count(property_id)
+    comment: Total number of property listings
+    display_name: Total Properties
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+      abbreviation: compact
+    synonyms:
+      - property count
+      - number of listings
+
+  - name: avg_base_price
+    expr: avg(base_price)
+    comment: Average base price across listings
+    display_name: Avg Base Price
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 2
+    synonyms:
+      - average price
+      - mean price
+
+  - name: total_guest_capacity
+    expr: sum(max_guests)
+    comment: Total guest capacity across all listings
+    display_name: Total Guest Capacity
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+      abbreviation: compact
+    synonyms:
+      - total capacity
+      - total max guests
