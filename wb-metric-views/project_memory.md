@@ -2,11 +2,12 @@
 
 ## Overview
 
-Bundle for authoring and registering Unity Catalog metric views as part of the `wanderBricksSemtantics` monorepo. Teaching project demonstrating how Genie Code builds the UC Semantic Layer.
+Bundle for authoring and registering Unity Catalog metric views as part of the `wanderBricksSemantics-care` monorepo. Teaching project demonstrating how Genie Code builds the UC Semantic Layer.
 
-**Bundle root:** `/Users/matthew.giglia@databricks.com/wanderBricksSemtantics/wb-metric-views/`  
-**Monorepo root:** `/Users/matthew.giglia@databricks.com/wanderBricksSemtantics/`  
-**Sibling bundle:** `wb-genie-agent` (Genie Space consuming these metric views)
+**Bundle root:** `/Users/matthew.giglia@databricks.com/wanderBricksSemantics-care/wb-metric-views/`  
+**Monorepo root:** `/Users/matthew.giglia@databricks.com/wanderBricksSemantics-care/`  
+**Sibling bundle:** `wb-genie-agent` (Genie Space consuming these metric views)  
+**Schema name:** `wb_metric_views_care` (the `_care` suffix isolates this workshop instance from other `wanderBricksSemantics` deployments)
 
 ---
 
@@ -78,20 +79,20 @@ Examples:
 
 ```yaml
 # Schemas
-${resources.schemas.metric_views_schema.name}
-${resources.schemas.metric_views_schema.id}
+${resources.schemas.wb_metric_views_schema.name}
+${resources.schemas.wb_metric_views_schema.id}
 
 # Jobs
-${resources.jobs.deploy_metrics.id}
+${resources.jobs.register_metric_views.id}
 
-# Pipelines
-${resources.pipelines.ingest_pipeline.id}
+# Pipelines (example — none defined yet)
+${resources.pipelines.<pipeline_key>.id}
 
-# SQL Warehouses
-${resources.sql_warehouses.compute.id}
+# SQL Warehouses (example — none defined yet)
+${resources.sql_warehouses.<warehouse_key>.id}
 
-# Volumes
-${resources.volumes.fixtures.id}
+# Volumes (example — none defined yet)
+${resources.volumes.<volume_key>.id}
 ```
 
 This ensures dependency ordering, avoids drift between targets, and makes refactors safe. Use `${var.*}` only within the resource definition itself (e.g., the schema resource reads `${var.catalog}`) — downstream consumers always go through `${resources.*}`.
@@ -105,3 +106,15 @@ This ensures dependency ordering, avoids drift between targets, and makes refact
 * The registration task passes `catalog_use` from `${var.catalog}` and `schema_use` from `${resources.schemas.wb_metric_views_schema.name}`.
 * The registration notebook must be target-flexible: inject catalog and schema at runtime, derive the metric view name from the file name, and publish the metric view into the target location.
 * Start with simple verification metric views against the WanderBricks properties sample before expanding to richer semantic-layer definitions.
+
+---
+
+## Dev Mode Naming
+
+When deployed to a `mode: development` target, Databricks auto-prefixes resource names with `dev_<username>_`. The actual deployed schema name will be:
+
+```
+hls_fde_dev.dev_matthew_giglia_wb_metric_views_care
+```
+
+Always confirm actual deployed names via `bundle summary` (or `${resources.*}` interpolation at runtime) rather than assuming the literal YAML `name:` value. Ad hoc queries in notebooks must use the prefixed name; the registration job resolves it correctly through widget parameters.
