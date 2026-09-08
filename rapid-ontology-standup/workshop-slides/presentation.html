@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Rapid Ontology Standup — Workshop</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --db-lava:#FF3621;--db-green:#00A972;--db-teal:#077A9D;--db-navy:#1B3139;
+  --db-oat:#EEECE6;--db-amber:#FFAB00;--db-white:#FFFFFF;
+  --db-g50:#FAF9F7;--db-g100:#F5F3F0;--db-g200:#E8E5E0;--db-g300:#D4D0CB;
+  --db-g600:#6B6560;--db-g800:#2D2926;
+  --content-max:920px;
+  color-scheme:only light;
+}
+html{font-size:18px;scroll-behavior:smooth}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--db-white);color:var(--db-navy)}
+
+/* ---- sections (formerly slides) ---- */
+.slide{max-width:var(--content-max);margin:0 auto;padding:48px 72px;position:relative}
+.slide::before{content:attr(data-label);display:block;margin-bottom:.6em;font-size:.65rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--db-g600)}
+
+/* section types */
+.title-slide{max-width:100%;background:var(--db-navy);color:var(--db-white);text-align:center;padding:80px 72px 72px}
+.title-slide::before{color:rgba(255,255,255,.35)}
+.module-title-slide{max-width:100%;background:linear-gradient(135deg,var(--db-navy) 0%,#1a4a5a 100%);color:var(--db-white);text-align:center;padding:64px 72px 56px}
+.module-title-slide::before{color:rgba(255,255,255,.35)}
+.transition-slide{max-width:100%;background:var(--db-g100);text-align:center;padding:36px 72px;display:flex;justify-content:center}
+.transition-slide::before{display:none}
+
+/* module separator */
+.module-title-slide+.slide:not(.module-title-slide){border-top:none}
+.slide+.module-title-slide{margin-top:0}
+
+/* typography */
+h1{font-size:2.6rem;font-weight:800;line-height:1.15;margin-bottom:.4em}
+h2{font-size:1.85rem;font-weight:700;line-height:1.2;margin-bottom:.35em}
+h3{font-size:1.3rem;font-weight:600;line-height:1.3;margin-bottom:.25em}
+p{font-size:1.05rem;line-height:1.6;max-width:48em}
+.subtitle{font-size:1.15rem;font-weight:300;opacity:.85}
+.big-stat{font-size:1.3rem;font-weight:500;margin-bottom:.6em}
+
+/* lists */
+ul,ol{padding-left:1.5em;margin:.6em 0}
+li{margin:.35em 0;line-height:1.5;font-size:1rem}
+li strong{color:var(--db-teal)}
+.checklist{list-style:none;padding-left:0}
+.checklist li{padding-left:1.8em;position:relative;margin:.5em 0}
+.checklist li::before{content:'\2713';position:absolute;left:0;color:var(--db-green);font-weight:700;font-size:1.1em}
+.steps{counter-reset:step;list-style:none;padding-left:0}
+.steps li{counter-increment:step;padding-left:2.5em;position:relative;margin:.7em 0}
+.steps li::before{content:counter(step);position:absolute;left:0;top:2px;width:1.6em;height:1.6em;background:var(--db-teal);color:#fff;border-radius:50%;font-weight:700;font-size:.8em;display:flex;align-items:center;justify-content:center}
+
+/* tables */
+table{border-collapse:collapse;width:100%;max-width:880px;margin:.8em 0;font-size:.92rem}
+th{background:var(--db-navy);color:#fff;padding:10px 14px;text-align:left;font-weight:600}
+td{padding:9px 14px;border-bottom:1px solid var(--db-g200)}
+tr:nth-child(even) td{background:var(--db-g50)}
+
+/* code */
+pre{background:var(--db-g800);color:#E8E5E0;padding:20px 24px;border-radius:10px;font-family:'JetBrains Mono','Fira Code',monospace;font-size:.8rem;line-height:1.55;overflow-x:auto;max-width:780px;margin:.8em 0}
+code{font-family:inherit}
+.kw{color:#FF8C69}.str{color:#98D8A0}.cmt{color:#6B7280}.num{color:#93C5FD}
+
+/* blockquote */
+blockquote{border-left:4px solid var(--db-lava);padding:14px 22px;background:var(--db-g50);border-radius:0 8px 8px 0;font-style:italic;max-width:680px;color:var(--db-g600);font-size:1rem}
+
+/* svg diagrams */
+.diagram{margin:1.2em auto;display:block}
+
+/* image placeholder */
+.img-placeholder{display:flex;align-items:center;justify-content:center;background:var(--db-g100);border:2px dashed var(--db-g300);border-radius:10px;padding:28px 24px;margin:.8em 0;max-width:600px}
+.img-placeholder span{font-size:.85rem;color:var(--db-g600);text-align:center}
+
+/* accent bar */
+.accent-bar{width:56px;height:4px;background:var(--db-lava);border-radius:2px;margin:0 auto 1.2em}
+
+/* two-col */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:36px;align-items:start}
+
+/* presenter notes (hidden in scroll view) */
+.notes{display:none}
+
+/* print */
+@media print{.slide{padding:36px 48px;max-width:100%}.notes{display:none}}
+</style>
+</head>
+<body>
+
+
+<!-- ============================================================ -->
+<!--  MODULE 00 — OPENING                                        -->
+<!-- ============================================================ -->
+
+<section class="slide title-slide" data-module="00" data-slide="1" data-label="Module 00 — Opening">
+  <div class="notes"><strong>Duration:</strong> 10 min &bull; <strong>Takeaway:</strong> "By 5 pm you'll have certified Metric Views, a curated Genie Agent, and a version-controlled repo you own." &bull; <strong>FAQ:</strong> "Do we need to prepare anything?" &rarr; Prerequisites on last slide.</div>
+  <h1>Rapid Ontology Standup</h1>
+  <p class="subtitle">One day to trusted, consistent answers from your data</p>
+  <p style="margin-top:1.4em;opacity:.72;font-size:.95rem;max-width:36em">Today we build your Genie Ontology together&nbsp;&mdash; the governed business context that powers accurate answers across dashboards, Genie, notebooks, and BI&nbsp;tools.</p>
+</section>
+
+<section class="slide" data-module="00" data-slide="2" data-label="Module 00 — Opening">
+  <h2>What You'll Walk Away With</h2>
+  <p style="margin-bottom:.8em">By the end of today:</p>
+  <ul class="checklist">
+    <li><strong>Certified Metric Views</strong> &mdash; your KPIs defined once, reusable everywhere</li>
+    <li><strong>A curated Genie Agent</strong> &mdash; ask questions in natural language, get trusted answers</li>
+    <li><strong>Domain research + data model analysis</strong> &mdash; reusable documentation of your data</li>
+    <li><strong>A version-controlled repo</strong> &mdash; everything in a DAB monorepo you own and can extend</li>
+    <li><strong>The understanding to do it again</strong> &mdash; you'll see every step, every decision</li>
+  </ul>
+</section>
+
+<section class="slide" data-module="00" data-slide="3" data-label="Module 00 — Opening">
+  <h2>How the Day Works</h2>
+  <table>
+    <thead><tr><th>Morning</th><th>Afternoon</th></tr></thead>
+    <tbody>
+      <tr><td>Understand your data</td><td>Build and validate</td></tr>
+      <tr><td>Domain research &rarr; Data model analysis &rarr; Metric View generation</td><td>Deploy &rarr; Review &rarr; Certify &rarr; Create Agent &rarr; Curate &rarr; Benchmark</td></tr>
+    </tbody>
+  </table>
+  <p style="margin-top:1.2em"><strong>The pattern:</strong> I teach a concept (slides) &rarr; we build it together (live in Genie Code) &rarr; repeat.</p>
+  <p>You're involved at every step. This isn't a black box.</p>
+</section>
+
+<section class="slide" data-module="00" data-slide="4" data-label="Module 00 — Opening">
+  <h2>The Math Class Principle</h2>
+  <blockquote>&ldquo;First we do it the interactive way so you understand the motivation for what comes next.&rdquo;</blockquote>
+  <p style="margin-top:1.2em">Today is the &ldquo;by hand&rdquo; phase. Once you understand how the semantic layer works and why each piece exists, the advanced topics&nbsp;&mdash; automation, testing, governance&nbsp;&mdash; will make intuitive sense.</p>
+</section>
+
+<section class="slide transition-slide" data-module="00" data-slide="T" data-label="Module 00 &rarr; Setup">
+  <blockquote>&ldquo;Let's get started. I'm going to clone the repo, create a feature branch, and open the bundle editor. You'll see everything I do on screen.&rdquo;</blockquote>
+</section>
+
+<!-- ============================================================ -->
+<!--  MODULE 01 — UC SEMANTICS PRIMER                             -->
+<!-- ============================================================ -->
+
+<section class="slide module-title-slide" data-module="01" data-slide="0" data-label="Module 01">
+  <div class="notes"><strong>Duration:</strong> 5 min &bull; <strong>Takeaway:</strong> "UC Business Semantics is four things: Metric Views, Domains, Pages, and Certification." &bull; <strong>FAQ:</strong> "How is this different from Power BI semantic model?" &rarr; Open, governed by UC, consumed by Genie + dashboards + notebooks + external BI simultaneously.</div>
+  <div class="accent-bar"></div>
+  <h1>UC Semantics Primer</h1>
+  <p class="subtitle">The human-modeled layer of the Genie Ontology</p>
+</section>
+
+<section class="slide" data-module="01" data-slide="1" data-label="Module 01 — UC Semantics Primer">
+  <h2>The Problem with No Semantic Layer</h2>
+  <p class="big-stat">Three analysts. Same question. Three different answers.</p>
+  <p>Why? Because the KPI definition lives in a dashboard, a spreadsheet, and someone's head&nbsp;&mdash; not in the data platform.</p>
+</section>
+
+<section class="slide" data-module="01" data-slide="2" data-label="Module 01 — UC Semantics Primer">
+  <h2>UC Business Semantics &mdash; Four Components</h2>
+  <div class="img-placeholder"><span>UC Semantics Feature Overview &mdash; see <a href="https://www.databricks.com/product/unity-catalog" style="color:var(--db-teal)">databricks.com/product/unity-catalog</a></span></div>
+  <table>
+    <thead><tr><th>Component</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Metric Views</strong></td><td>Define KPIs once &mdash; measures, dimensions, joins, formats. Query engine handles the rest.</td></tr>
+      <tr><td><strong>Domains</strong></td><td>Organize assets by business purpose &mdash; not by catalog hierarchy.</td></tr>
+      <tr><td><strong>Pages</strong></td><td>Authoritative definitions of business terms. Genie cites them.</td></tr>
+      <tr><td><strong>Certification</strong></td><td>Trust signals &mdash; steers Genie toward assets your organization vouches for.</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:.85rem;color:var(--db-g600);margin-top:.4em">All GA as of August 2026.</p>
+</section>
+
+<section class="slide" data-module="01" data-slide="3" data-label="Module 01 — UC Semantics Primer">
+  <h2>Define Once, Use Everywhere</h2>
+  <svg class="diagram" viewBox="0 0 700 280" xmlns="http://www.w3.org/2000/svg" style="max-width:660px">
+    <rect x="225" y="8" width="250" height="52" rx="10" fill="#077A9D"/>
+    <text x="350" y="32" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="15" font-weight="600">Metric View</text>
+    <text x="350" y="48" text-anchor="middle" fill="#B0E0EF" font-family="Inter,sans-serif" font-size="10.5">(defined once)</text>
+    <line x1="350" y1="60" x2="120" y2="100" stroke="#077A9D" stroke-width="2"/>
+    <line x1="350" y1="60" x2="350" y2="100" stroke="#077A9D" stroke-width="2"/>
+    <line x1="350" y1="60" x2="580" y2="100" stroke="#077A9D" stroke-width="2"/>
+    <rect x="30" y="100" width="180" height="40" rx="8" fill="#00A972"/>
+    <text x="120" y="125" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="13" font-weight="500">Dashboards</text>
+    <rect x="260" y="100" width="180" height="40" rx="8" fill="#00A972"/>
+    <text x="350" y="125" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="13" font-weight="500">Genie Agent</text>
+    <rect x="490" y="100" width="180" height="40" rx="8" fill="#00A972"/>
+    <text x="580" y="125" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="13" font-weight="500">Notebooks</text>
+    <line x1="120" y1="140" x2="120" y2="185" stroke="#D4D0CB" stroke-width="2" stroke-dasharray="4 3"/>
+    <line x1="350" y1="140" x2="350" y2="185" stroke="#D4D0CB" stroke-width="2" stroke-dasharray="4 3"/>
+    <line x1="580" y1="140" x2="580" y2="185" stroke="#D4D0CB" stroke-width="2" stroke-dasharray="4 3"/>
+    <rect x="30" y="185" width="180" height="40" rx="8" fill="#E8E5E0"/>
+    <text x="120" y="210" text-anchor="middle" fill="#1B3139" font-family="Inter,sans-serif" font-size="13" font-weight="500">External BI</text>
+    <rect x="260" y="185" width="180" height="40" rx="8" fill="#E8E5E0"/>
+    <text x="350" y="210" text-anchor="middle" fill="#1B3139" font-family="Inter,sans-serif" font-size="13" font-weight="500">SQL Queries</text>
+    <rect x="490" y="185" width="180" height="40" rx="8" fill="#E8E5E0"/>
+    <text x="580" y="210" text-anchor="middle" fill="#1B3139" font-family="Inter,sans-serif" font-size="13" font-weight="500">Alerts</text>
+  </svg>
+  <p style="text-align:center">One definition. Every consumer gets the same number. No more reconciliation fights.</p>
+</section>
+
+<section class="slide transition-slide" data-module="01" data-slide="T" data-label="Module 01 &rarr; Demo">
+  <blockquote>&ldquo;Let me show you what this looks like in practice. Here's the Discover page in your workspace&nbsp;&mdash; this is where Domains and Pages surface. And here's a certified Metric View in Catalog Explorer&hellip;&rdquo;</blockquote>
+</section>
+
+<!-- ============================================================ -->
+<!--  MODULE 02 — GENIE ONTOLOGY                                  -->
+<!-- ============================================================ -->
+
+<section class="slide module-title-slide" data-module="02" data-slide="0" data-label="Module 02">
+  <div class="notes"><strong>Duration:</strong> 10 min &bull; <strong>Takeaway:</strong> "The Genie Ontology combines what you define (UC Semantics) with what Genie learns from your platform." &bull; <strong>FAQ:</strong> "Does Genie train on our data?" &rarr; No. It extracts, indexes, and ranks context snippets. It does not fine-tune the foundation model.</div>
+  <div class="accent-bar"></div>
+  <h1>Genie Ontology</h1>
+  <p class="subtitle">Modeled context + inferred context = trusted answers</p>
+</section>
+
+<section class="slide" data-module="02" data-slide="1" data-label="Module 02 — Genie Ontology">
+  <h2>Two Levels of Context</h2>
+  <svg class="diagram" viewBox="0 0 700 310" xmlns="http://www.w3.org/2000/svg" style="max-width:660px">
+    <rect x="20" y="8" width="660" height="275" rx="14" fill="none" stroke="#1B3139" stroke-width="2"/>
+    <text x="350" y="36" text-anchor="middle" fill="#1B3139" font-family="Inter,sans-serif" font-size="16" font-weight="700">Genie Ontology</text>
+    <rect x="42" y="52" width="290" height="185" rx="10" fill="#077A9D"/>
+    <text x="187" y="78" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="14" font-weight="600">Modeled Context</text>
+    <text x="68" y="105" fill="#C9EBF5" font-family="Inter,sans-serif" font-size="12.5">Metric Views</text>
+    <text x="68" y="127" fill="#C9EBF5" font-family="Inter,sans-serif" font-size="12.5">Domains</text>
+    <text x="68" y="149" fill="#C9EBF5" font-family="Inter,sans-serif" font-size="12.5">Pages</text>
+    <text x="68" y="171" fill="#C9EBF5" font-family="Inter,sans-serif" font-size="12.5">Certified Assets</text>
+    <rect x="368" y="52" width="290" height="185" rx="10" fill="#FFAB00"/>
+    <text x="513" y="78" text-anchor="middle" fill="#1B3139" font-family="Inter,sans-serif" font-size="14" font-weight="600">Inferred Context</text>
+    <text x="394" y="105" fill="#2D2926" font-family="Inter,sans-serif" font-size="12.5">Dashboards</text>
+    <text x="394" y="127" fill="#2D2926" font-family="Inter,sans-serif" font-size="12.5">SQL queries</text>
+    <text x="394" y="149" fill="#2D2926" font-family="Inter,sans-serif" font-size="12.5">Agent configs</text>
+    <text x="394" y="171" fill="#2D2926" font-family="Inter,sans-serif" font-size="12.5">Usage signals</text>
+    <text x="350" y="268" text-anchor="middle" fill="#1B3139" font-family="Inter,sans-serif" font-size="12" font-weight="500" font-style="italic">Modeled wins when both exist.</text>
+  </svg>
+  <p><strong>What you define</strong> takes precedence over <strong>what Genie infers</strong>. That's why building the semantic layer matters&nbsp;&mdash; it's the authoritative source.</p>
+</section>
+
+<section class="slide" data-module="02" data-slide="2" data-label="Module 02 — Genie Ontology">
+  <h2>How Genie Finds the Right Answer</h2>
+  <ol class="steps">
+    <li><strong>Parse</strong> your question &mdash; intent, entities, metrics, filters</li>
+    <li><strong>Search</strong> the Ontology for relevant context</li>
+    <li><strong>Filter</strong> by your UC permissions &mdash; you only see what you're authorized to see</li>
+    <li><strong>Rank</strong> by authority (OntoRank) &mdash; not just similarity, but trustworthiness</li>
+    <li><strong>Generate</strong> SQL and execute it</li>
+    <li><strong>Cite</strong> the sources &mdash; you can verify where the answer came from</li>
+  </ol>
+</section>
+
+<section class="slide" data-module="02" data-slide="3" data-label="Module 02 — Genie Ontology">
+  <h2>OntoRank &mdash; Why Certification Matters</h2>
+  <p>OntoRank doesn't just ask &ldquo;what text looks similar?&rdquo; It asks &ldquo;which definition is most <strong style="color:var(--db-lava)">authoritative</strong>?&rdquo;</p>
+  <p style="margin-top:.8em">Signals: provenance (governed MV &gt; ad-hoc query), expert usage, certification, freshness, lineage.</p>
+  <p style="margin-top:.8em"><strong>Practical implication:</strong> When we certify your Metric Views at the end of today, Genie will prioritize them over any ad-hoc query or uncertified asset. That's the trust unlock.</p>
+</section>
+
+<section class="slide transition-slide" data-module="02" data-slide="T" data-label="Module 02 &rarr; Demo">
+  <blockquote>&ldquo;Let me show you Genie One in action. I'll ask a question and we'll look at the citations&nbsp;&mdash; you'll see exactly which sources Genie used to generate the answer&hellip;&rdquo;</blockquote>
+</section>
+
+<!-- ============================================================ -->
+<!--  MODULE 03 — METRIC VIEW CONCEPTS                            -->
+<!-- ============================================================ -->
+
+<section class="slide module-title-slide" data-module="03" data-slide="0" data-label="Module 03">
+  <div class="notes"><strong>Duration:</strong> 10 min &bull; <strong>Takeaway:</strong> "A Metric View separates what to calculate from how to slice it." &bull; <strong>FAQ:</strong> "Why not just use a regular view?" &rarr; A regular view locks in aggregation at creation time. A MV lets users group by any field at query time.</div>
+  <div class="accent-bar"></div>
+  <h1>Metric View Concepts</h1>
+  <p class="subtitle">Separate what to calculate from how to slice it</p>
+</section>
+
+<section class="slide" data-module="03" data-slide="1" data-label="Module 03 — Metric View Concepts">
+  <h2>Standard View vs. Metric View</h2>
+  <table>
+    <thead><tr><th>Standard View</th><th>Metric View</th></tr></thead>
+    <tbody>
+      <tr><td>Aggregation locked at creation time</td><td>Aggregation computed at query time</td></tr>
+      <tr><td>One grouping per view</td><td>Any grouping, any filter</td></tr>
+      <tr><td>Need a new view for each slice</td><td>One definition serves all consumers</td></tr>
+      <tr><td>No semantic metadata</td><td>Display names, synonyms, formats built in</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="slide" data-module="03" data-slide="2" data-label="Module 03 — Metric View Concepts">
+  <h2>Anatomy of a Metric View</h2>
+  <pre><code><span class="kw">version</span>: <span class="num">1.1</span>
+<span class="kw">source</span>: catalog.schema.orders        <span class="cmt"># ONE fact source</span>
+
+<span class="kw">fields</span>:                               <span class="cmt"># How to slice it</span>
+  - <span class="kw">name</span>: region
+    <span class="kw">display_name</span>: <span class="str">"Region"</span>
+    <span class="kw">synonyms</span>: [territory, area]
+
+<span class="kw">measures</span>:                             <span class="cmt"># What to calculate</span>
+  - <span class="kw">name</span>: total_revenue
+    <span class="kw">expr</span>: SUM(order_total)
+    <span class="kw">display_name</span>: <span class="str">"Total Revenue"</span>
+    <span class="kw">format</span>: { type: currency, currency_code: USD }
+    <span class="kw">synonyms</span>: [revenue, sales]</code></pre>
+  <p><strong>Fields</strong> = dimensions (how to group/filter). <strong>Measures</strong> = aggregations (what to calculate).</p>
+</section>
+
+<section class="slide" data-module="03" data-slide="3" data-label="Module 03 — Metric View Concepts">
+  <h2>Agent Metadata &mdash; The Secret Sauce</h2>
+  <p>Every field and measure gets three things:</p>
+  <ul>
+    <li><strong><code>display_name</code></strong> &mdash; human-readable label (&ldquo;Total Revenue&rdquo; not &ldquo;tot_rev&rdquo;)</li>
+    <li><strong><code>synonyms</code></strong> &mdash; alternative names Genie recognizes (&ldquo;revenue&rdquo;, &ldquo;sales&rdquo;, &ldquo;total sales&rdquo;)</li>
+    <li><strong><code>format</code></strong> &mdash; how to display it (currency, percentage, date format)</li>
+  </ul>
+  <p style="margin-top:1em"><strong style="color:var(--db-lava)">This is mandatory in our process, not optional.</strong> It's what makes Genie accurate.</p>
+</section>
+
+<section class="slide" data-module="03" data-slide="4" data-label="Module 03 — Metric View Concepts">
+  <h2>Composability &mdash; Build on What You've Defined</h2>
+  <pre><code><span class="kw">measures</span>:
+  - <span class="kw">name</span>: total_revenue
+    <span class="kw">expr</span>: SUM(order_total)
+  - <span class="kw">name</span>: order_count
+    <span class="kw">expr</span>: COUNT(<span class="num">1</span>)
+  - <span class="kw">name</span>: avg_order_value                    <span class="cmt"># References the two above</span>
+    <span class="kw">expr</span>: MEASURE(total_revenue) / MEASURE(order_count)</code></pre>
+  <p>If <code>total_revenue</code> changes (e.g., to exclude tax), <code>avg_order_value</code> automatically uses the updated definition. No copy-paste. No drift.</p>
+</section>
+
+<section class="slide transition-slide" data-module="03" data-slide="T" data-label="Module 03 &rarr; Demo">
+  <blockquote>&ldquo;Let me show you what a Metric View looks like in the Catalog Explorer YAML editor. Then we'll switch to the bundle editor and start generating these from your actual data&hellip;&rdquo;</blockquote>
+</section>
+
+<!-- ============================================================ -->
+<!--  MODULE 04 — GENIE CODE WORKFLOW                             -->
+<!-- ============================================================ -->
+
+<section class="slide module-title-slide" data-module="04" data-slide="0" data-label="Module 04">
+  <div class="notes"><strong>Duration:</strong> 5 min &bull; <strong>Takeaway:</strong> "Genie Code in the bundle editor is our workspace for the day. Everything is version-controlled from the first keystroke." &bull; <strong>FAQ:</strong> "Do we need any special skills or MCP connections?" &rarr; No. Genie Code has built-in skills. Web Search is Beta but available.</div>
+  <div class="accent-bar"></div>
+  <h1>Genie Code Workflow</h1>
+  <p class="subtitle">Version-controlled from the first keystroke</p>
+</section>
+
+<section class="slide" data-module="04" data-slide="1" data-label="Module 04 — Genie Code Workflow">
+  <h2>Our Workspace for the Day</h2>
+  <p>Everything happens in the <strong>Genie Code bundle editor</strong>:</p>
+  <ul>
+    <li>Version-controlled from the first keystroke</li>
+    <li>Native awareness of the bundle structure, resources, and file paths</li>
+    <li><code>@</code> context to reference schemas, tables, and files in the repo</li>
+    <li>Web Search (Beta) for industry research</li>
+    <li>Agent mode for multi-step analysis</li>
+  </ul>
+  <p style="margin-top:1em">We're working on a <strong>feature branch</strong>&nbsp;&mdash; nothing touches <code>main</code> until we're ready.</p>
+</section>
+
+<section class="slide" data-module="04" data-slide="2" data-label="Module 04 — Genie Code Workflow">
+  <h2>The @ Context Superpower</h2>
+  <p>When I type <code>@</code> in Genie Code, I can reference:</p>
+  <ul>
+    <li><strong>Schemas</strong> &mdash; &ldquo;analyze everything in this schema&rdquo;</li>
+    <li><strong>Tables</strong> &mdash; &ldquo;look at this specific table&rdquo;</li>
+    <li><strong>Files in the repo</strong> &mdash; &ldquo;use the domain research we just wrote as context for the next step&rdquo;</li>
+  </ul>
+  <p style="margin-top:1em">This is how each phase builds on the previous one&nbsp;&mdash; the output of Phase&nbsp;1 becomes the input context for Phase&nbsp;3.</p>
+</section>
+
+<section class="slide" data-module="04" data-slide="3" data-label="Module 04 — Genie Code Workflow">
+  <h2>What We're About to Do</h2>
+  <svg class="diagram" viewBox="0 0 700 230" xmlns="http://www.w3.org/2000/svg" style="max-width:660px">
+    <rect x="20" y="10" width="200" height="42" rx="8" fill="#077A9D"/>
+    <text x="120" y="36" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="12" font-weight="600">Phase 1: Domain Research</text>
+    <line x1="220" y1="31" x2="260" y2="31" stroke="#077A9D" stroke-width="2" marker-end="url(#arrow)"/>
+    <text x="290" y="35" fill="#6B6560" font-family="Inter,sans-serif" font-size="10">docs/semantics/01_industry_domain_research.md</text>
+    <rect x="20" y="65" width="200" height="42" rx="8" fill="#077A9D"/>
+    <text x="120" y="91" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="12" font-weight="600">Phase 2: Data Model Analysis</text>
+    <line x1="220" y1="86" x2="260" y2="86" stroke="#077A9D" stroke-width="2"/>
+    <text x="290" y="90" fill="#6B6560" font-family="Inter,sans-serif" font-size="10">docs/semantics/02_data_model_analysis.md</text>
+    <rect x="20" y="120" width="200" height="42" rx="8" fill="#077A9D"/>
+    <text x="120" y="146" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="12" font-weight="600">Phase 3: Metric View YAML</text>
+    <line x1="220" y1="141" x2="260" y2="141" stroke="#077A9D" stroke-width="2"/>
+    <text x="290" y="145" fill="#6B6560" font-family="Inter,sans-serif" font-size="10">fixtures/metric_views/*.metric_view.yml</text>
+    <rect x="20" y="175" width="200" height="42" rx="8" fill="#00A972"/>
+    <text x="120" y="201" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="12" font-weight="600">Phase 4: Deploy + Certify</text>
+    <line x1="220" y1="196" x2="260" y2="196" stroke="#00A972" stroke-width="2"/>
+    <text x="290" y="200" fill="#6B6560" font-family="Inter,sans-serif" font-size="10">Unity Catalog (dev/test)</text>
+  </svg>
+  <p>Each phase produces a concrete artifact. Each artifact becomes context for the next phase.</p>
+  <p><strong>Let's start with Phase 1&nbsp;&mdash; researching your industry.</strong></p>
+</section>
+
+<section class="slide transition-slide" data-module="04" data-slide="T" data-label="Module 04 &rarr; Live Demo">
+  <blockquote>&ldquo;I'm going to open a new Genie Code session in the bundle editor and start with Web Search. We'll research the standard KPIs for your industry, then search for how your organization talks about its own domain&hellip;&rdquo;</blockquote>
+</section>
+
+<!-- ============================================================ -->
+<!--  MODULE 05 — DATA MODEL ANALYSIS                             -->
+<!-- ============================================================ -->
+
+<section class="slide module-title-slide" data-module="05" data-slide="0" data-label="Module 05">
+  <div class="notes"><strong>Duration:</strong> 5 min &bull; <strong>Takeaway:</strong> "Each Metric View has exactly one fact source. Understanding which tables are facts vs. dimensions is the prerequisite for correct MV design." &bull; <strong>FAQ:</strong> "What if our tables aren't in a star schema?" &rarr; That's fine. Genie Code will identify the relationships.</div>
+  <div class="accent-bar"></div>
+  <h1>Data Model Analysis</h1>
+  <p class="subtitle">Know your facts from your dimensions</p>
+</section>
+
+<section class="slide" data-module="05" data-slide="1" data-label="Module 05 — Data Model Analysis">
+  <h2>Why This Step Matters</h2>
+  <p>A Metric View has <strong>one fact source</strong>. If we pick the wrong table, or miss a join, the measures aggregate incorrectly.</p>
+  <p style="margin-top:.8em">The data model analysis tells us:</p>
+  <ul>
+    <li>Which tables are <strong>facts</strong> (events, transactions) vs. <strong>dimensions</strong> (lookups, reference)</li>
+    <li>What <strong>joins</strong> connect them (and at what cardinality)</li>
+    <li>What the <strong>granularity</strong> is (what does one row represent?)</li>
+    <li>Whether the data has <strong>integrity issues</strong> we need to handle</li>
+  </ul>
+</section>
+
+<section class="slide" data-module="05" data-slide="2" data-label="Module 05 — Data Model Analysis">
+  <h2>What Genie Code Will Analyze</h2>
+  <table>
+    <thead><tr><th>Analysis</th><th>What it reveals</th></tr></thead>
+    <tbody>
+      <tr><td>PK/FK candidates</td><td>How tables relate to each other</td></tr>
+      <tr><td>Granularity</td><td>One row = one order? One row = one line item?</td></tr>
+      <tr><td>Referential integrity</td><td>Orphaned records, null FK rates</td></tr>
+      <tr><td>Join cardinality</td><td>Many-to-one? One-to-many?</td></tr>
+      <tr><td>Data profiling</td><td>Value distributions, null rates, distinct counts</td></tr>
+      <tr><td>Lineage</td><td>How often is each table updated? What reads from it?</td></tr>
+    </tbody>
+  </table>
+  <p>This is the &ldquo;full-spectrum&rdquo; analysis&nbsp;&mdash; not just a schema dump.</p>
+</section>
+
+<section class="slide" data-module="05" data-slide="3" data-label="Module 05 — Data Model Analysis">
+  <h2>Star Schema &rarr; Metric View</h2>
+  <svg class="diagram" viewBox="0 0 520 360" xmlns="http://www.w3.org/2000/svg" style="max-width:480px">
+    <rect x="170" y="130" width="180" height="55" rx="10" fill="#FF3621"/>
+    <text x="260" y="155" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="14" font-weight="700">fact_sales</text>
+    <text x="260" y="173" text-anchor="middle" fill="#FFB3A7" font-family="Inter,sans-serif" font-size="10">← This is the MV source</text>
+    <rect x="185" y="15" width="150" height="42" rx="8" fill="#077A9D"/>
+    <text x="260" y="41" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="13" font-weight="500">dim_date</text>
+    <line x1="260" y1="57" x2="260" y2="130" stroke="#077A9D" stroke-width="2"/>
+    <rect x="10" y="137" width="140" height="42" rx="8" fill="#077A9D"/>
+    <text x="80" y="163" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="13" font-weight="500">dim_product</text>
+    <line x1="150" y1="158" x2="170" y2="158" stroke="#077A9D" stroke-width="2"/>
+    <rect x="185" y="260" width="150" height="42" rx="8" fill="#077A9D"/>
+    <text x="260" y="286" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="13" font-weight="500">dim_region</text>
+    <line x1="260" y1="185" x2="260" y2="260" stroke="#077A9D" stroke-width="2"/>
+    <text x="260" y="330" text-anchor="middle" fill="#6B6560" font-family="Inter,sans-serif" font-size="11">Fact = MV source. Dimensions = LEFT OUTER JOINs.</text>
+    <text x="260" y="348" text-anchor="middle" fill="#6B6560" font-family="Inter,sans-serif" font-size="11">Fields from dimensions. Measures from the fact.</text>
+  </svg>
+</section>
+
+<section class="slide transition-slide" data-module="05" data-slide="T" data-label="Module 05 &rarr; Live Demo">
+  <blockquote>&ldquo;Now I'm going to @ context your schema and ask Genie Code to perform the full-spectrum analysis. Watch how it identifies the fact tables, the join candidates, and the granularity&hellip;&rdquo;</blockquote>
+</section>
+
+<!-- ============================================================ -->
+<!--  MODULE 06 — YAML DEEP DIVE                                  -->
+<!-- ============================================================ -->
+
+<section class="slide module-title-slide" data-module="06" data-slide="0" data-label="Module 06">
+  <div class="notes"><strong>Duration:</strong> 10 min &bull; <strong>Takeaway:</strong> "The YAML is the source of truth. Agent metadata is mandatory. Composability keeps definitions DRY." &bull; <strong>FAQ:</strong> "Can we edit the YAML later?" &rarr; Yes. It's version-controlled. Changes go through the same review process.</div>
+  <div class="accent-bar"></div>
+  <h1>YAML Deep Dive</h1>
+  <p class="subtitle">The source of truth for every metric</p>
+</section>
+
+<section class="slide" data-module="06" data-slide="1" data-label="Module 06 — YAML Deep Dive">
+  <h2>The YAML Is the Source of Truth</h2>
+  <svg class="diagram" viewBox="0 0 500 180" xmlns="http://www.w3.org/2000/svg" style="max-width:460px">
+    <rect x="10" y="8" width="480" height="165" rx="10" fill="#2D2926"/>
+    <text x="30" y="38" fill="#FFAB00" font-family="JetBrains Mono,monospace" font-size="12" font-weight="500">📁 fixtures/metric_views/</text>
+    <text x="50" y="65" fill="#E8E5E0" font-family="JetBrains Mono,monospace" font-size="11">├── mv_sales.metric_view.yml</text>
+    <text x="50" y="90" fill="#E8E5E0" font-family="JetBrains Mono,monospace" font-size="11">├── mv_inventory.metric_view.yml</text>
+    <text x="50" y="115" fill="#E8E5E0" font-family="JetBrains Mono,monospace" font-size="11">└── mv_customer.metric_view.yml</text>
+    <text x="30" y="150" fill="#6B7280" font-family="Inter,sans-serif" font-size="10">One file per MV · {catalog}/{schema} placeholders · Name from filename · Version-controlled</text>
+  </svg>
+</section>
+
+<section class="slide" data-module="06" data-slide="2" data-label="Module 06 — YAML Deep Dive">
+  <h2>Joins &mdash; Star and Snowflake</h2>
+  <div class="two-col">
+    <div>
+      <h3>Star schema (most common)</h3>
+      <pre><code><span class="kw">joins</span>:
+  - <span class="kw">name</span>: customer
+    <span class="kw">source</span>: <span class="str">"{catalog}.{schema}.dim_customer"</span>
+    <span class="kw">on</span>: source.customer_id = customer.customer_id
+    <span class="kw">rely</span>:
+      <span class="kw">at_most_one_match</span>: <span class="num">true</span></code></pre>
+    </div>
+    <div>
+      <h3>Snowflake (nested joins)</h3>
+      <pre><code><span class="kw">joins</span>:
+  - <span class="kw">name</span>: customer
+    <span class="kw">source</span>: <span class="str">"{catalog}.{schema}.dim_customer"</span>
+    <span class="kw">on</span>: source.customer_id = customer.customer_id
+    <span class="kw">joins</span>:
+      - <span class="kw">name</span>: nation
+        <span class="kw">source</span>: <span class="str">"{catalog}.{schema}.dim_nation"</span>
+        <span class="kw">on</span>: customer.nation_key = nation.nation_key</code></pre>
+      <p style="font-size:.9rem">Reference nested columns: <code>customer.nation.nation_name</code></p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-module="06" data-slide="3" data-label="Module 06 — YAML Deep Dive">
+  <h2>Window Measures &mdash; Time-Series KPIs</h2>
+  <pre><code><span class="kw">measures</span>:
+  - <span class="kw">name</span>: rolling_7d_customers
+    <span class="kw">expr</span>: COUNT(DISTINCT customer_id)
+    <span class="kw">window</span>:
+      - <span class="kw">order</span>: order_date
+        <span class="kw">range</span>: trailing <span class="num">7</span> day
+        <span class="kw">semiadditive</span>: last</code></pre>
+  <p>Rolling averages, cumulative totals, period-over-period&nbsp;&mdash; without the consumer writing window functions.</p>
+  <p style="margin-top:.6em"><code>semiadditive: last</code> &rarr; returns the most recent value when the date field isn't in the GROUP BY.</p>
+</section>
+
+<section class="slide" data-module="06" data-slide="4" data-label="Module 06 — YAML Deep Dive">
+  <h2>Format Specifications</h2>
+  <table>
+    <thead><tr><th>Type</th><th>Example</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><code>currency</code></td><td><code>{ type: currency, currency_code: USD }</code></td><td>$1,234.56</td></tr>
+      <tr><td><code>percentage</code></td><td><code>{ type: percentage, decimal_places: { type: exact, places: 1 } }</code></td><td>45.2%</td></tr>
+      <tr><td><code>number</code></td><td><code>{ type: number, abbreviation: compact }</code></td><td>1.2K</td></tr>
+      <tr><td><code>date</code></td><td><code>{ type: date, date_format: locale_short_month }</code></td><td>Sep 1, 2026</td></tr>
+    </tbody>
+  </table>
+  <p>Formats flow to dashboards and Genie automatically. Define once.</p>
+</section>
+
+<section class="slide transition-slide" data-module="06" data-slide="T" data-label="Module 06 &rarr; Live Demo">
+  <blockquote>&ldquo;Now I'm going to @ context both the domain research and the data model analysis, and ask Genie Code to generate the Metric View YAMLs. Watch how it uses the industry KPIs from Phase 1 and the join relationships from Phase 2&hellip;&rdquo;</blockquote>
+</section>
+
+<!-- ============================================================ -->
+<!--  MODULE 07 — GENIE AGENT CONCEPTS                            -->
+<!-- ============================================================ -->
+
+<section class="slide module-title-slide" data-module="07" data-slide="0" data-label="Module 07">
+  <div class="notes"><strong>Duration:</strong> 10 min &bull; <strong>Takeaway:</strong> "The Genie Agent is the consumption surface. It scopes Genie's context to your domain and only references certified Metric Views." &bull; <strong>FAQ:</strong> "Can business users create their own Agents?" &rarr; Yes, via Genie One. But governed Agents should be created as DAB resources with review gates.</div>
+  <div class="accent-bar"></div>
+  <h1>Genie Agent Concepts</h1>
+  <p class="subtitle">The consumption surface for trusted answers</p>
+</section>
+
+<section class="slide" data-module="07" data-slide="1" data-label="Module 07 — Genie Agent Concepts">
+  <h2>What Is a Genie Agent?</h2>
+  <p>A domain-specific environment where your team asks questions in natural language and gets SQL-backed, governed answers.</p>
+  <div class="img-placeholder"><span>Genie Agents &mdash; see <a href="https://docs.databricks.com/aws/en/genie/index.html" style="color:var(--db-teal)">docs.databricks.com &rsaquo; Genie</a></span></div>
+  <ul>
+    <li>Scoped to your business domain (≤30 items)</li>
+    <li>Powered by your certified Metric Views</li>
+    <li>Curated with instructions, example SQL, and benchmarks</li>
+    <li>The <strong>space description</strong> is the routing signal&nbsp;&mdash; Genie One uses it to find the right Agent</li>
+  </ul>
+</section>
+
+<section class="slide" data-module="07" data-slide="2" data-label="Module 07 — Genie Agent Concepts">
+  <h2>What Goes IN the Agent</h2>
+  <table>
+    <thead><tr><th>Include</th><th>Don't include</th></tr></thead>
+    <tbody>
+      <tr><td>✅ Certified Metric Views</td><td>❌ Raw base tables</td></tr>
+      <tr><td>✅ Space description</td><td>❌ Uncertified views</td></tr>
+      <tr><td>✅ Example SQL for common questions</td><td>❌ Every table in the schema</td></tr>
+      <tr><td>✅ Structured instructions</td><td>❌ Prose instructions for things SQL expressions can handle</td></tr>
+      <tr><td>✅ Benchmarks for quality testing</td><td></td></tr>
+    </tbody>
+  </table>
+  <p style="margin-top:.8em"><strong>Rule:</strong> Only Metric Views. Never raw tables. The MV pre-defines the aggregation logic; raw tables force Genie to guess.</p>
+</section>
+
+<section class="slide" data-module="07" data-slide="3" data-label="Module 07 — Genie Agent Concepts">
+  <h2>The Knowledge Store</h2>
+  <p>The Agent's knowledge store enhances Genie's understanding:</p>
+  <ul>
+    <li><strong>Table/column descriptions</strong> &mdash; scoped to the Agent (doesn't change UC metadata)</li>
+    <li><strong>Join relationships</strong> &mdash; auto-populated from PK/FK, or manually defined</li>
+    <li><strong>SQL expressions</strong> &mdash; reusable measures, filters, and fields</li>
+    <li><strong>Prompt matching</strong> &mdash; matches user terms to actual data values (up to 100M rows)</li>
+  </ul>
+  <p style="margin-top:.8em">Knowledge mining automatically suggests updates from your interactions.</p>
+</section>
+
+<section class="slide" data-module="07" data-slide="4" data-label="Module 07 — Genie Agent Concepts">
+  <h2>Benchmarks &mdash; How We Know It's Working</h2>
+  <p>A benchmark = a question + the correct SQL answer.</p>
+  <ul>
+    <li>2–4 phrasings per question (tests natural language variation)</li>
+    <li>Ground truth SQL that produces the known-correct result</li>
+    <li>Run after every change&nbsp;&mdash; if a previously passing benchmark fails, the new change is the cause</li>
+  </ul>
+  <p style="margin-top:1em;font-size:1.1rem"><strong>Our target: &ge;85–90% accuracy on in-scope questions.</strong></p>
+</section>
+
+<section class="slide transition-slide" data-module="07" data-slide="T" data-label="Module 07 &rarr; Live Demo">
+  <blockquote>&ldquo;Now I'm going to create the Genie Agent as a DAB resource and wire in the certified Metric Views we just built. Watch how the Agent definition references the MVs, not the raw tables&hellip;&rdquo;</blockquote>
+</section>
+
+<!-- ============================================================ -->
+<!--  MODULE 08 — CURATION PATTERNS                               -->
+<!-- ============================================================ -->
+
+<section class="slide module-title-slide" data-module="08" data-slide="0" data-label="Module 08">
+  <div class="notes"><strong>Duration:</strong> 10 min &bull; <strong>Takeaway:</strong> "Fix semantics in the Metric View, not in the Agent instructions. The MV is the governed source of truth." &bull; <strong>FAQ:</strong> "What if Genie gets the wrong answer?" &rarr; Diagnose MV issue vs. Agent issue. MV fixes go through MV process; Agent fixes applied directly.</div>
+  <div class="accent-bar"></div>
+  <h1>Curation Patterns</h1>
+  <p class="subtitle">Fix semantics at the source, not the surface</p>
+</section>
+
+<section class="slide" data-module="08" data-slide="1" data-label="Module 08 — Curation Patterns">
+  <h2>The Side-by-Side Pattern</h2>
+  <svg class="diagram" viewBox="0 0 660 200" xmlns="http://www.w3.org/2000/svg" style="max-width:620px">
+    <rect x="10" y="10" width="300" height="175" rx="12" fill="#077A9D"/>
+    <text x="160" y="40" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="15" font-weight="700">Genie Agent</text>
+    <text x="160" y="60" text-anchor="middle" fill="#C9EBF5" font-family="Inter,sans-serif" font-size="11">(left panel)</text>
+    <text x="35" y="90" fill="#C9EBF5" font-family="Inter,sans-serif" font-size="12">• Ask questions</text>
+    <text x="35" y="112" fill="#C9EBF5" font-family="Inter,sans-serif" font-size="12">• See answers</text>
+    <text x="35" y="134" fill="#C9EBF5" font-family="Inter,sans-serif" font-size="12">• Test variations</text>
+    <rect x="350" y="10" width="300" height="175" rx="12" fill="#FFAB00"/>
+    <text x="500" y="40" text-anchor="middle" fill="#1B3139" font-family="Inter,sans-serif" font-size="15" font-weight="700">Genie Code</text>
+    <text x="500" y="60" text-anchor="middle" fill="#2D2926" font-family="Inter,sans-serif" font-size="11">(right panel)</text>
+    <text x="375" y="90" fill="#2D2926" font-family="Inter,sans-serif" font-size="12">• Evaluate answers</text>
+    <text x="375" y="112" fill="#2D2926" font-family="Inter,sans-serif" font-size="12">• Propose improvements</text>
+    <text x="375" y="134" fill="#2D2926" font-family="Inter,sans-serif" font-size="12">• Apply fixes</text>
+  </svg>
+  <p><strong>New Genie Code session</strong>&nbsp;&mdash; separate from the building session. Evaluate the Agent fresh.</p>
+</section>
+
+<section class="slide" data-module="08" data-slide="2" data-label="Module 08 — Curation Patterns">
+  <h2>Where to Fix What</h2>
+  <table>
+    <thead><tr><th>Problem</th><th>Fix it in</th><th>Example</th></tr></thead>
+    <tbody>
+      <tr><td>Wrong aggregation logic</td><td><strong>Metric View</strong></td><td>SUM vs. COUNT DISTINCT</td></tr>
+      <tr><td>Missing synonym</td><td><strong>Metric View</strong> agent metadata</td><td>Users say &ldquo;sales&rdquo; but MV only has &ldquo;revenue&rdquo;</td></tr>
+      <tr><td>Ambiguous column</td><td><strong>Agent</strong> knowledge store</td><td>Two date columns &mdash; add descriptions</td></tr>
+      <tr><td>Missing business rule</td><td><strong>Agent</strong> instruction</td><td>&ldquo;When user asks about 'performance,' they mean cases, not dollars&rdquo;</td></tr>
+      <tr><td>Wrong join</td><td><strong>Metric View</strong></td><td>Missing or incorrect join condition</td></tr>
+    </tbody>
+  </table>
+  <p style="margin-top:.8em"><strong style="color:var(--db-lava)">Bias toward fixing the Metric View.</strong> The MV is the governed source of truth. Agent instructions are a last resort.</p>
+</section>
+
+<section class="slide" data-module="08" data-slide="3" data-label="Module 08 — Curation Patterns">
+  <h2>The Feedback Loop</h2>
+  <svg class="diagram" viewBox="0 0 400 340" xmlns="http://www.w3.org/2000/svg" style="max-width:380px">
+    <rect x="75" y="5" width="250" height="38" rx="8" fill="#FFAB00"/>
+    <text x="200" y="29" text-anchor="middle" fill="#1B3139" font-family="Inter,sans-serif" font-size="12" font-weight="600">Agent curation discovers MV issue</text>
+    <line x1="200" y1="43" x2="200" y2="63" stroke="#D4D0CB" stroke-width="2" marker-end="url(#arrowG)"/>
+    <rect x="75" y="63" width="250" height="38" rx="8" fill="#E8E5E0"/>
+    <text x="200" y="87" text-anchor="middle" fill="#1B3139" font-family="Inter,sans-serif" font-size="11" font-weight="500">File semantics feedback request</text>
+    <line x1="200" y1="101" x2="200" y2="121" stroke="#D4D0CB" stroke-width="2"/>
+    <rect x="75" y="121" width="250" height="38" rx="8" fill="#077A9D"/>
+    <text x="200" y="145" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="11" font-weight="500">MV practitioner fixes on mv-* branch</text>
+    <line x1="200" y1="159" x2="200" y2="179" stroke="#D4D0CB" stroke-width="2"/>
+    <rect x="75" y="179" width="250" height="38" rx="8" fill="#077A9D"/>
+    <text x="200" y="203" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="11" font-weight="500">Redeploy → re-certify → merge</text>
+    <line x1="200" y1="217" x2="200" y2="237" stroke="#D4D0CB" stroke-width="2"/>
+    <rect x="75" y="237" width="250" height="38" rx="8" fill="#00A972"/>
+    <text x="200" y="261" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="11" font-weight="500">Agent redeploys → picks up updated MV</text>
+    <text x="200" y="305" text-anchor="middle" fill="#6B6560" font-family="Inter,sans-serif" font-size="10" font-style="italic">Agent process CANNOT suggest: formula, dimension, join, or filter changes.</text>
+    <text x="200" y="320" text-anchor="middle" fill="#6B6560" font-family="Inter,sans-serif" font-size="10" font-style="italic">Those are owned by the MV author/reviewer.</text>
+  </svg>
+</section>
+
+<section class="slide transition-slide" data-module="08" data-slide="T" data-label="Module 08 &rarr; Live Demo">
+  <blockquote>&ldquo;Now I'm going to open the Genie Agent and Genie Code side by side. I'll ask test questions, and we'll diagnose any issues together&nbsp;&mdash; deciding whether to fix the MV or the Agent&hellip;&rdquo;</blockquote>
+</section>
+
+<!-- ============================================================ -->
+<!--  MODULE 09 — WHAT'S NEXT                                     -->
+<!-- ============================================================ -->
+
+<section class="slide module-title-slide" data-module="09" data-slide="0" data-label="Module 09">
+  <div class="notes"><strong>Duration:</strong> 10 min &bull; <strong>Takeaway:</strong> "Today was the foundation. There's a clear roadmap for governance, automation, testing, and advanced modeling." &bull; <strong>FAQ:</strong> "Can we do this for other domains?" &rarr; Absolutely. Create a new feature branch and repeat the process.</div>
+  <div class="accent-bar"></div>
+  <h1>What's Next</h1>
+  <p class="subtitle">Today was the foundation &mdash; here's the roadmap</p>
+</section>
+
+<section class="slide" data-module="09" data-slide="1" data-label="Module 09 — What's Next">
+  <h2>What You Built Today</h2>
+  <ul class="checklist">
+    <li><strong>Industry domain research</strong> &mdash; how your organization talks about its data</li>
+    <li><strong>Full-spectrum data model analysis</strong> &mdash; every table, every join, every relationship</li>
+    <li><strong>Certified Metric Views</strong> &mdash; your KPIs defined once, governed in Unity Catalog</li>
+    <li><strong>A curated Genie Agent</strong> &mdash; natural-language access to trusted answers</li>
+    <li><strong>A version-controlled repo</strong> &mdash; reproducible, auditable, extensible</li>
+  </ul>
+  <p style="margin-top:1em"><strong>You own all of this.</strong> It's in your repo, on your feature branch, deployed to your catalog.</p>
+</section>
+
+<section class="slide" data-module="09" data-slide="2" data-label="Module 09 — What's Next">
+  <h2>Extending to New Domains</h2>
+  <p>To add a new business domain:</p>
+  <ol class="steps">
+    <li>Create a new feature branch (<code>&lt;initials&gt;-mv-&lt;domain&gt;</code>)</li>
+    <li>Repeat Phases 1–4 with the new schema</li>
+    <li>Create a new Genie Agent for the domain</li>
+    <li>Genie One routes questions to the right Agent via the space description</li>
+  </ol>
+  <p style="margin-top:1em"><strong>Same methodology. Same repo. New data.</strong></p>
+</section>
+
+<section class="slide" data-module="09" data-slide="3" data-label="Module 09 — What's Next">
+  <h2>The Roadmap</h2>
+  <table>
+    <thead><tr><th>Topic</th><th>What it adds</th><th>When</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Governed domains &amp; pages</strong></td><td>Formal business glossary, auto-tagging, compliance monitoring</td><td>Next engagement</td></tr>
+      <tr><td><strong>Production automation</strong></td><td>Scheduled ontology maintenance, new metric candidates surfaced automatically</td><td>Next engagement</td></tr>
+      <tr><td><strong>Deterministic testing</strong></td><td>CI/CD quality gates &mdash; every metric validated before production</td><td>Next engagement</td></tr>
+      <tr><td><strong>Dashboard modeling</strong></td><td>Multi-fact semantic models, governed dashboard deployment</td><td>When dashboard needs arise</td></tr>
+      <tr><td><strong>Knowledge corpus</strong></td><td>Your training manuals and wikis searchable by Genie</td><td>Dedicated engagement</td></tr>
+      <tr><td><strong>AI-enriched metrics</strong></td><td>Forecasts and ML predictions in the semantic layer</td><td>Dedicated engagement</td></tr>
+    </tbody>
+  </table>
+  <p>Each topic has a detailed design document ready. We scope next steps based on what matters most to your organization.</p>
+</section>
+
+<section class="slide title-slide" data-module="09" data-slide="4" data-label="Module 09 — What's Next">
+  <h1>Today you learned it by hand.<br>Next, we automate it.</h1>
+  <p class="subtitle" style="margin-top:.6em">The semantic layer you built today is the foundation for everything that comes next&nbsp;&mdash; consistent answers, trusted AI, and self-service analytics at scale.</p>
+  <p style="margin-top:1.5em;font-size:1.2rem;font-weight:500">Questions?</p>
+</section>
+
+<!-- ============================================================ -->
+<!--  APPENDIX — ARCHITECTURE DIAGRAMS                            -->
+<!-- ============================================================ -->
+
+<section class="slide module-title-slide" data-module="A" data-slide="0" data-label="Appendix">
+  <div class="accent-bar"></div>
+  <h1>Appendix</h1>
+  <p class="subtitle">Architecture &amp; process diagrams</p>
+</section>
+
+<!-- A.1 — L200-A Metric View Standup Flow -->
+<section class="slide" data-module="A" data-slide="1" data-label="Appendix — L200-A MV Standup Flow">
+  <h2>L200-A: Metric View Standup Flow</h2>
+  <svg class="diagram" viewBox="0 0 760 420" xmlns="http://www.w3.org/2000/svg" style="max-width:720px">
+    <!-- Start node -->
+    <rect x="280" y="5" width="200" height="32" rx="16" fill="#1B3139"/>
+    <text x="380" y="26" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="11" font-weight="600">Create feature branch</text>
+    <line x1="380" y1="37" x2="380" y2="55" stroke="#D4D0CB" stroke-width="2"/>
+    <!-- Phase 1 -->
+    <rect x="230" y="55" width="300" height="50" rx="10" fill="#077A9D"/>
+    <text x="380" y="76" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="13" font-weight="600">Phase 1: Industry Domain Research</text>
+    <text x="380" y="94" text-anchor="middle" fill="#C9EBF5" font-family="Inter,sans-serif" font-size="10">Web search → Customer docs → docs/semantics/01_*.md</text>
+    <line x1="380" y1="105" x2="380" y2="120" stroke="#D4D0CB" stroke-width="2"/>
+    <!-- Phase 2 -->
+    <rect x="230" y="120" width="300" height="50" rx="10" fill="#077A9D"/>
+    <text x="380" y="141" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="13" font-weight="600">Phase 2: Data Model Analysis</text>
+    <text x="380" y="159" text-anchor="middle" fill="#C9EBF5" font-family="Inter,sans-serif" font-size="10">@ schema → PK/FK, granularity, joins → docs/semantics/02_*.md</text>
+    <line x1="380" y1="170" x2="380" y2="185" stroke="#D4D0CB" stroke-width="2"/>
+    <!-- Phase 3 -->
+    <rect x="230" y="185" width="300" height="50" rx="10" fill="#077A9D"/>
+    <text x="380" y="206" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="13" font-weight="600">Phase 3: MV YAML Generation</text>
+    <text x="380" y="224" text-anchor="middle" fill="#C9EBF5" font-family="Inter,sans-serif" font-size="10">@ Phase 1+2 → Generate YAMLs → Practitioner review → Commit</text>
+    <!-- Iteration loop -->
+    <path d="M530,210 C570,210 570,200 570,195 L570,195 C570,190 570,185 530,185" fill="none" stroke="#FFAB00" stroke-width="1.5" stroke-dasharray="4 3"/>
+    <text x="590" y="200" fill="#FFAB00" font-family="Inter,sans-serif" font-size="9">iterate</text>
+    <line x1="380" y1="235" x2="380" y2="250" stroke="#D4D0CB" stroke-width="2"/>
+    <!-- Phase 4 -->
+    <rect x="230" y="250" width="300" height="50" rx="10" fill="#077A9D"/>
+    <text x="380" y="271" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="13" font-weight="600">Phase 4: Deploy, Review, Certify</text>
+    <text x="380" y="289" text-anchor="middle" fill="#C9EBF5" font-family="Inter,sans-serif" font-size="10">Deploy bundle → Governance review → Domains/Pages → Certify</text>
+    <line x1="380" y1="300" x2="380" y2="315" stroke="#D4D0CB" stroke-width="2"/>
+    <!-- Merge -->
+    <rect x="280" y="315" width="200" height="32" rx="16" fill="#1B3139"/>
+    <text x="380" y="336" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="11" font-weight="600">Merge to main</text>
+    <line x1="380" y1="347" x2="380" y2="362" stroke="#D4D0CB" stroke-width="2"/>
+    <!-- Handoff -->
+    <rect x="270" y="362" width="220" height="32" rx="16" fill="#00A972"/>
+    <text x="380" y="383" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="11" font-weight="700">Certified MVs ready for L200-B</text>
+    <!-- Feedback loop -->
+    <rect x="10" y="190" width="180" height="34" rx="8" fill="none" stroke="#FFAB00" stroke-width="1.5" stroke-dasharray="5 3"/>
+    <text x="100" y="212" text-anchor="middle" fill="#FFAB00" font-family="Inter,sans-serif" font-size="10" font-weight="500">Semantics feedback from L200-B</text>
+    <path d="M190,207 L225,207" fill="none" stroke="#FFAB00" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrowAmber)"/>
+    <defs><marker id="arrowAmber" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#FFAB00"/></marker></defs>
+  </svg>
+</section>
+
+<!-- A.2 — L200-B Genie Agent Standup Flow -->
+<section class="slide" data-module="A" data-slide="2" data-label="Appendix — L200-B Agent Standup Flow">
+  <h2>L200-B: Genie Agent Standup Flow</h2>
+  <svg class="diagram" viewBox="0 0 760 420" xmlns="http://www.w3.org/2000/svg" style="max-width:720px">
+    <!-- Prerequisite -->
+    <rect x="250" y="5" width="260" height="32" rx="16" fill="#00A972"/>
+    <text x="380" y="26" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="11" font-weight="600">Certified MVs from L200-A (merged)</text>
+    <line x1="380" y1="37" x2="380" y2="52" stroke="#D4D0CB" stroke-width="2"/>
+    <!-- Start -->
+    <rect x="280" y="52" width="200" height="28" rx="14" fill="#1B3139"/>
+    <text x="380" y="71" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="10" font-weight="600">Create feature branch</text>
+    <line x1="380" y1="80" x2="380" y2="95" stroke="#D4D0CB" stroke-width="2"/>
+    <!-- Phase 1 -->
+    <rect x="230" y="95" width="300" height="48" rx="10" fill="#077A9D"/>
+    <text x="380" y="115" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="13" font-weight="600">Phase 1: Create &amp; Deploy Agent</text>
+    <text x="380" y="133" text-anchor="middle" fill="#C9EBF5" font-family="Inter,sans-serif" font-size="10">DAB resource → Wire certified MVs → Space description → Deploy</text>
+    <line x1="380" y1="143" x2="380" y2="158" stroke="#D4D0CB" stroke-width="2"/>
+    <!-- Phase 2 -->
+    <rect x="200" y="158" width="360" height="75" rx="10" fill="#077A9D"/>
+    <text x="380" y="178" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="13" font-weight="600">Phase 2: Side-by-Side Curation</text>
+    <text x="380" y="196" text-anchor="middle" fill="#C9EBF5" font-family="Inter,sans-serif" font-size="10">Evaluate answers → Diagnose issue type:</text>
+    <text x="310" y="214" text-anchor="middle" fill="#C9EBF5" font-family="Inter,sans-serif" font-size="10">• Agent owns → Fix directly</text>
+    <text x="475" y="214" text-anchor="middle" fill="#FFAB00" font-family="Inter,sans-serif" font-size="10">• MV issue → Feedback to L200-A</text>
+    <!-- Iteration -->
+    <path d="M560,200 C595,200 595,185 595,178 L595,178 C595,170 595,163 560,163" fill="none" stroke="#FFAB00" stroke-width="1.5" stroke-dasharray="4 3"/>
+    <text x="612" y="185" fill="#FFAB00" font-family="Inter,sans-serif" font-size="9">iterate</text>
+    <line x1="380" y1="233" x2="380" y2="248" stroke="#D4D0CB" stroke-width="2"/>
+    <!-- Phase 3 -->
+    <rect x="230" y="248" width="300" height="48" rx="10" fill="#077A9D"/>
+    <text x="380" y="268" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="13" font-weight="600">Phase 3: Validation &amp; Handoff</text>
+    <text x="380" y="286" text-anchor="middle" fill="#C9EBF5" font-family="Inter,sans-serif" font-size="10">Benchmarks (≥85%) → Regression test → UAT → Cross-agent test</text>
+    <line x1="380" y1="296" x2="380" y2="311" stroke="#D4D0CB" stroke-width="2"/>
+    <!-- Merge -->
+    <rect x="280" y="311" width="200" height="28" rx="14" fill="#1B3139"/>
+    <text x="380" y="330" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="10" font-weight="600">Merge to main</text>
+    <line x1="380" y1="339" x2="380" y2="354" stroke="#D4D0CB" stroke-width="2"/>
+    <!-- Done -->
+    <rect x="270" y="354" width="220" height="32" rx="16" fill="#00A972"/>
+    <text x="380" y="375" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="11" font-weight="700">Agent live + handoff complete</text>
+    <!-- Feedback out -->
+    <rect x="10" y="198" width="160" height="28" rx="8" fill="none" stroke="#FFAB00" stroke-width="1.5" stroke-dasharray="5 3"/>
+    <text x="90" y="217" text-anchor="middle" fill="#FFAB00" font-family="Inter,sans-serif" font-size="10" font-weight="500">Feedback to L200-A</text>
+    <line x1="170" y1="212" x2="195" y2="212" stroke="#FFAB00" stroke-width="1.5" stroke-dasharray="4 3"/>
+  </svg>
+</section>
+
+<!-- A.3 — Handoff and Feedback Loop -->
+<section class="slide" data-module="A" data-slide="3" data-label="Appendix — Handoff &amp; Feedback Loop">
+  <h2>L200-A ↔ L200-B: Handoff &amp; Feedback Loop</h2>
+  <svg class="diagram" viewBox="0 0 760 380" xmlns="http://www.w3.org/2000/svg" style="max-width:720px">
+    <!-- Swim lanes -->
+    <rect x="10" y="30" width="170" height="340" rx="8" fill="#077A9D" opacity=".12"/>
+    <text x="95" y="52" text-anchor="middle" fill="#077A9D" font-family="Inter,sans-serif" font-size="11" font-weight="700">MV Practitioner</text>
+    <rect x="200" y="30" width="170" height="340" rx="8" fill="#1B3139" opacity=".08"/>
+    <text x="285" y="52" text-anchor="middle" fill="#1B3139" font-family="Inter,sans-serif" font-size="11" font-weight="700">Bundle / UC</text>
+    <rect x="390" y="30" width="170" height="340" rx="8" fill="#FFAB00" opacity=".12"/>
+    <text x="475" y="52" text-anchor="middle" fill="#9A7200" font-family="Inter,sans-serif" font-size="11" font-weight="700">Agent Practitioner</text>
+    <!-- Phase label: Handoff -->
+    <text x="600" y="78" fill="#1B3139" font-family="Inter,sans-serif" font-size="10" font-weight="700">HANDOFF</text>
+    <!-- MV flow -->
+    <rect x="25" y="70" width="140" height="26" rx="6" fill="#077A9D"/>
+    <text x="95" y="88" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="9.5" font-weight="500">Generate MV YAML</text>
+    <line x1="165" y1="83" x2="210" y2="83" stroke="#077A9D" stroke-width="1.5"/>
+    <rect x="210" y="70" width="150" height="26" rx="6" fill="#E8E5E0"/>
+    <text x="285" y="88" text-anchor="middle" fill="#1B3139" font-family="Inter,sans-serif" font-size="9.5" font-weight="500">Deploy to dev/test</text>
+    <rect x="25" y="105" width="140" height="26" rx="6" fill="#077A9D"/>
+    <text x="95" y="123" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="9.5" font-weight="500">Certify + merge</text>
+    <line x1="165" y1="118" x2="210" y2="118" stroke="#077A9D" stroke-width="1.5"/>
+    <rect x="210" y="105" width="150" height="26" rx="6" fill="#00A972"/>
+    <text x="285" y="123" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="9.5" font-weight="500">Certified MVs available</text>
+    <!-- Handoff arrow -->
+    <line x1="360" y1="118" x2="405" y2="148" stroke="#00A972" stroke-width="2"/>
+    <!-- Agent creates -->
+    <rect x="405" y="140" width="140" height="26" rx="6" fill="#FFAB00"/>
+    <text x="475" y="158" text-anchor="middle" fill="#1B3139" font-family="Inter,sans-serif" font-size="9.5" font-weight="500">Create Agent + deploy</text>
+    <!-- Phase label: Feedback -->
+    <text x="600" y="188" fill="#1B3139" font-family="Inter,sans-serif" font-size="10" font-weight="700">FEEDBACK</text>
+    <rect x="405" y="180" width="140" height="26" rx="6" fill="#FFAB00"/>
+    <text x="475" y="198" text-anchor="middle" fill="#1B3139" font-family="Inter,sans-serif" font-size="9.5" font-weight="500">Side-by-side curation</text>
+    <!-- Feedback arrow -->
+    <line x1="405" y1="206" x2="165" y2="240" stroke="#FFAB00" stroke-width="1.5" stroke-dasharray="5 3"/>
+    <text x="285" y="218" text-anchor="middle" fill="#FFAB00" font-family="Inter,sans-serif" font-size="9" font-style="italic">synonyms, display names, comments, formats only</text>
+    <!-- MV fix -->
+    <rect x="25" y="230" width="140" height="26" rx="6" fill="#077A9D"/>
+    <text x="95" y="248" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="9.5" font-weight="500">New mv-* branch fix</text>
+    <line x1="165" y1="243" x2="210" y2="243" stroke="#077A9D" stroke-width="1.5"/>
+    <rect x="210" y="230" width="150" height="26" rx="6" fill="#E8E5E0"/>
+    <text x="285" y="248" text-anchor="middle" fill="#1B3139" font-family="Inter,sans-serif" font-size="9.5" font-weight="500">Redeploy + re-certify</text>
+    <rect x="25" y="265" width="140" height="26" rx="6" fill="#077A9D"/>
+    <text x="95" y="283" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="9.5" font-weight="500">Merge to main</text>
+    <!-- Updated MV available -->
+    <line x1="285" y1="256" x2="285" y2="300" stroke="#D4D0CB" stroke-width="1.5"/>
+    <rect x="210" y="300" width="150" height="26" rx="6" fill="#00A972"/>
+    <text x="285" y="318" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="9.5" font-weight="500">Updated MV available</text>
+    <line x1="360" y1="313" x2="405" y2="335" stroke="#00A972" stroke-width="1.5"/>
+    <!-- Agent redeploy -->
+    <rect x="405" y="325" width="140" height="26" rx="6" fill="#FFAB00"/>
+    <text x="475" y="343" text-anchor="middle" fill="#1B3139" font-family="Inter,sans-serif" font-size="9.5" font-weight="500">Redeploy Agent</text>
+    <!-- NOT allowed box -->
+    <rect x="580" y="230" width="160" height="62" rx="6" fill="none" stroke="#FF3621" stroke-width="1.5"/>
+    <text x="660" y="248" text-anchor="middle" fill="#FF3621" font-family="Inter,sans-serif" font-size="9" font-weight="700">NOT allowed via feedback:</text>
+    <text x="660" y="264" text-anchor="middle" fill="#FF3621" font-family="Inter,sans-serif" font-size="9">formula, dimension, join,</text>
+    <text x="660" y="280" text-anchor="middle" fill="#FF3621" font-family="Inter,sans-serif" font-size="9">or filter changes</text>
+  </svg>
+</section>
+
+<!-- A.4 — Multi-Tenant Session Scoping -->
+<section class="slide" data-module="A" data-slide="4" data-label="Appendix — Multi-Tenant Session Scoping">
+  <h2>Multi-Tenant Session Scoping Architecture</h2>
+  <svg class="diagram" viewBox="0 0 760 350" xmlns="http://www.w3.org/2000/svg" style="max-width:720px">
+    <!-- App layer -->
+    <rect x="10" y="10" width="180" height="80" rx="10" fill="#E8E5E0"/>
+    <text x="100" y="32" text-anchor="middle" fill="#1B3139" font-family="Inter,sans-serif" font-size="11" font-weight="700">Customer Application</text>
+    <text x="100" y="52" text-anchor="middle" fill="#6B6560" font-family="Inter,sans-serif" font-size="10">User selects Customer A</text>
+    <text x="100" y="68" text-anchor="middle" fill="#6B6560" font-family="Inter,sans-serif" font-size="10">Authenticate as DB identity</text>
+    <!-- Arrow -->
+    <line x1="190" y1="50" x2="230" y2="50" stroke="#1B3139" stroke-width="2"/>
+    <!-- Supervisor -->
+    <rect x="230" y="10" width="200" height="80" rx="10" fill="#077A9D"/>
+    <text x="330" y="32" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="11" font-weight="700">Supervisor Agent</text>
+    <text x="330" y="50" text-anchor="middle" fill="#C9EBF5" font-family="Inter,sans-serif" font-size="10">Inject customer_id context</text>
+    <text x="330" y="66" text-anchor="middle" fill="#C9EBF5" font-family="Inter,sans-serif" font-size="10">Validate SQL has predicate</text>
+    <!-- Arrow -->
+    <line x1="430" y1="50" x2="470" y2="50" stroke="#1B3139" stroke-width="2"/>
+    <!-- Genie Agent -->
+    <rect x="470" y="10" width="150" height="80" rx="10" fill="#E8E5E0"/>
+    <text x="545" y="32" text-anchor="middle" fill="#1B3139" font-family="Inter,sans-serif" font-size="11" font-weight="700">Genie Agent</text>
+    <text x="545" y="50" text-anchor="middle" fill="#6B6560" font-family="Inter,sans-serif" font-size="10">Shared across customers</text>
+    <text x="545" y="66" text-anchor="middle" fill="#6B6560" font-family="Inter,sans-serif" font-size="10">Generates SQL</text>
+    <!-- Arrow down -->
+    <line x1="545" y1="90" x2="545" y2="120" stroke="#1B3139" stroke-width="2"/>
+    <!-- UC Layer -->
+    <rect x="410" y="120" width="270" height="80" rx="10" fill="#00A972"/>
+    <text x="545" y="142" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="11" font-weight="700">Unity Catalog Enforcement</text>
+    <text x="545" y="160" text-anchor="middle" fill="#C9EBF5" font-family="Inter,sans-serif" font-size="10">Row Filter / ABAC Policy</text>
+    <text x="545" y="176" text-anchor="middle" fill="#C9EBF5" font-family="Inter,sans-serif" font-size="10">session_user() → entitlement table</text>
+    <!-- Arrow to result -->
+    <line x1="545" y1="200" x2="545" y2="230" stroke="#1B3139" stroke-width="2"/>
+    <rect x="445" y="230" width="200" height="32" rx="8" fill="#1B3139"/>
+    <text x="545" y="251" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="11" font-weight="600">Only Customer A rows returned</text>
+    <!-- Return to supervisor -->
+    <path d="M445,246 L100,246 L100,90" fill="none" stroke="#D4D0CB" stroke-width="1.5" stroke-dasharray="5 3"/>
+    <!-- Entitlement table -->
+    <rect x="10" y="280" width="350" height="60" rx="8" fill="#2D2926"/>
+    <text x="185" y="300" text-anchor="middle" fill="#FFAB00" font-family="JetBrains Mono,monospace" font-size="10" font-weight="500">security.user_customer_scope</text>
+    <text x="185" y="318" text-anchor="middle" fill="#E8E5E0" font-family="JetBrains Mono,monospace" font-size="9">principal | customer_id | sub_customer_id</text>
+    <text x="185" y="332" text-anchor="middle" fill="#6B7280" font-family="JetBrains Mono,monospace" font-size="9">alice | cust_001 | sub_001, sub_002 &nbsp;&nbsp; bob | cust_002 | sub_009</text>
+    <!-- Dotted line to UC -->
+    <line x1="360" y1="310" x2="410" y2="180" stroke="#D4D0CB" stroke-width="1.5" stroke-dasharray="4 3"/>
+  </svg>
+</section>
+
+<!-- A.5 — Genie Ontology Architecture -->
+<section class="slide" data-module="A" data-slide="5" data-label="Appendix — Genie Ontology Architecture">
+  <h2>Genie Ontology: Two-Level Context Architecture</h2>
+  <svg class="diagram" viewBox="0 0 760 400" xmlns="http://www.w3.org/2000/svg" style="max-width:720px">
+    <!-- Pipeline: top row -->
+    <rect x="10" y="10" width="100" height="36" rx="8" fill="#1B3139"/>
+    <text x="60" y="33" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="10" font-weight="600">Question</text>
+    <line x1="110" y1="28" x2="130" y2="28" stroke="#D4D0CB" stroke-width="1.5"/>
+    <rect x="130" y="10" width="80" height="36" rx="8" fill="#077A9D"/>
+    <text x="170" y="33" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="10" font-weight="500">Parse</text>
+    <line x1="210" y1="28" x2="230" y2="28" stroke="#D4D0CB" stroke-width="1.5"/>
+    <rect x="230" y="10" width="80" height="36" rx="8" fill="#077A9D"/>
+    <text x="270" y="33" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="10" font-weight="500">Retrieve</text>
+    <line x1="310" y1="28" x2="330" y2="28" stroke="#D4D0CB" stroke-width="1.5"/>
+    <rect x="330" y="10" width="80" height="36" rx="8" fill="#077A9D"/>
+    <text x="370" y="33" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="10" font-weight="500">Filter (UC)</text>
+    <line x1="410" y1="28" x2="430" y2="28" stroke="#D4D0CB" stroke-width="1.5"/>
+    <rect x="430" y="10" width="90" height="36" rx="8" fill="#FF3621"/>
+    <text x="475" y="33" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="10" font-weight="600">Rank</text>
+    <line x1="520" y1="28" x2="540" y2="28" stroke="#D4D0CB" stroke-width="1.5"/>
+    <rect x="540" y="10" width="80" height="36" rx="8" fill="#077A9D"/>
+    <text x="580" y="33" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="10" font-weight="500">Execute</text>
+    <line x1="620" y1="28" x2="640" y2="28" stroke="#D4D0CB" stroke-width="1.5"/>
+    <rect x="640" y="10" width="100" height="36" rx="8" fill="#00A972"/>
+    <text x="690" y="33" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="10" font-weight="600">Cite Answer</text>
+    <!-- Lines down from Retrieve -->
+    <line x1="270" y1="46" x2="270" y2="100" stroke="#077A9D" stroke-width="1.5"/>
+    <!-- Modeled Context box -->
+    <rect x="30" y="100" width="240" height="150" rx="10" fill="#077A9D"/>
+    <text x="150" y="124" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-size="13" font-weight="700">Modeled Context</text>
+    <text x="150" y="142" text-anchor="middle" fill="#C9EBF5" font-family="Inter,sans-serif" font-size="11">UC Semantics</text>
+    <text x="55" y="168" fill="#C9EBF5" font-family="Inter,sans-serif" font-size="11">• Metric Views</text>
+    <text x="55" y="188" fill="#C9EBF5" font-family="Inter,sans-serif" font-size="11">• Domains + Subdomains</text>
+    <text x="55" y="208" fill="#C9EBF5" font-family="Inter,sans-serif" font-size="11">• Pages</text>
+    <text x="55" y="228" fill="#C9EBF5" font-family="Inter,sans-serif" font-size="11">• Certification + Deprecation</text>
+    <!-- Inferred Context box -->
+    <rect x="310" y="100" width="240" height="150" rx="10" fill="#FFAB00"/>
+    <text x="430" y="124" text-anchor="middle" fill="#1B3139" font-family="Inter,sans-serif" font-size="13" font-weight="700">Inferred Context</text>
+    <text x="430" y="142" text-anchor="middle" fill="#2D2926" font-family="Inter,sans-serif" font-size="11">Learned Knowledge</text>
+    <text x="335" y="168" fill="#2D2926" font-family="Inter,sans-serif" font-size="11">• Dashboards + SQL</text>
+    <text x="335" y="188" fill="#2D2926" font-family="Inter,sans-serif" font-size="11">• Popular Queries</text>
+    <text x="335" y="208" fill="#2D2926" font-family="Inter,sans-serif" font-size="11">• Agent Knowledge Stores</text>
+    <text x="335" y="228" fill="#2D2926" font-family="Inter,sans-serif" font-size="11">• Usage + Lineage Signals</text>
+    <!-- Lines from context boxes to Retrieve -->
+    <line x1="150" y1="100" x2="260" y2="46" stroke="#077A9D" stroke-width="1.5"/>
+    <line x1="430" y1="100" x2="280" y2="46" stroke="#FFAB00" stroke-width="1.5"/>
+    <!-- OntoRank signals box -->
+    <rect x="580" y="100" width="160" height="110" rx="8" fill="none" stroke="#D4D0CB" stroke-width="1.5" stroke-dasharray="5 3"/>
+    <text x="660" y="120" text-anchor="middle" fill="#FF3621" font-family="Inter,sans-serif" font-size="11" font-weight="700">OntoRank Signals</text>
+    <text x="660" y="140" text-anchor="middle" fill="#6B6560" font-family="Inter,sans-serif" font-size="10">provenance</text>
+    <text x="660" y="155" text-anchor="middle" fill="#6B6560" font-family="Inter,sans-serif" font-size="10">expert authorship</text>
+    <text x="660" y="170" text-anchor="middle" fill="#6B6560" font-family="Inter,sans-serif" font-size="10">usage frequency</text>
+    <text x="660" y="185" text-anchor="middle" fill="#6B6560" font-family="Inter,sans-serif" font-size="10">certified linkage</text>
+    <text x="660" y="200" text-anchor="middle" fill="#6B6560" font-family="Inter,sans-serif" font-size="10">freshness + lineage</text>
+    <!-- Line from Rank to OntoRank -->
+    <line x1="475" y1="46" x2="580" y2="105" stroke="#FF3621" stroke-width="1.5" stroke-dasharray="4 3"/>
+  </svg>
+</section>
+
+</body>
+</html>
