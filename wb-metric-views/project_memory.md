@@ -99,6 +99,76 @@ This ensures dependency ordering, avoids drift between targets, and makes refact
 
 ---
 
+## Current Phase
+
+**Phase 3 ready** — all research and semantic documentation complete. Next work is YAML generation.
+
+| Phase | Status | Artifacts |
+| --- | --- | --- |
+| Phase 1 — Industry domain research | ✅ Complete | `docs/research/01_industry_domain_research.md` |
+| Phase 2 — Data model analysis | ✅ Complete | `docs/research/02_data_model_analysis.md` |
+| Phase 2.5 — Semantic glossary | ✅ Complete | `docs/semantics/` (4 files) |
+| Phase 3 — Metric view YAML generation | 🔜 Next | `fixtures/metric_views/*.metric_view.yml` |
+
+**Phase 3 authoring order:** `mv_bookings` → extend `mv_properties` → `mv_payments` → `mv_reviews` → `mv_host_performance` → `mv_page_views`.
+
+---
+
+## Documentation Structure
+
+```
+docs/
+├── research/
+│   ├── 01_industry_domain_research.md   # Hospitality/STR KPI and industry research
+│   └── 02_data_model_analysis.md        # Full 16-table analysis: PK audit, FK map, DQ flags, MV candidates
+└── semantics/
+    ├── 01_domain_context.md             # WanderBricks business type, subdomain taxonomy, non-achievable KPIs, Genie gap guidance
+    ├── 02_kpi_glossary.md               # 30 KPIs × 6 subdomains — formulas, synonyms, MV mappings, RULE-N refs
+    ├── 03_dimension_hierarchies.md      # 5 hierarchies: Geography, Time (dual-date), Guest, Property, Channel
+    └── 04_business_rules.md             # RULE-01..14 — DQ flags, status filters, column semantic distinctions
+```
+
+**Semantic glossary usage:**
+- Cite RULE-N IDs in every metric view YAML `description:` field that touches an affected table.
+- Sync metric view `synonyms:` arrays with `docs/semantics/02_kpi_glossary.md` synonyms lists.
+- Read `04_business_rules.md` before authoring any new metric view YAML.
+
+---
+
+## Metric View Candidates
+
+### Tier 1 — Immediately Buildable
+
+| MV Name | Source Fact | Key Joins |
+| --- | --- | --- |
+| `mv_bookings` | `bookings` | `properties`, `users`, `destinations` |
+| `mv_properties` *(extend)* | `properties` | `destinations`, `hosts` |
+| `mv_payments` | `payments` | `bookings` (bridge) |
+| `mv_reviews` | `reviews` (`is_deleted=false`) | `bookings`, `properties`, `destinations` |
+| `mv_host_performance` | `bookings` | `properties` → `hosts` |
+| `mv_page_views` | `page_views` | `properties`, `destinations` |
+
+### Tier 2 — Requires Base View First
+
+| MV Name | Blocker |
+| --- | --- |
+| `mv_booking_funnel` | Needs `v_property_user_sessions` (no direct FK from `page_views` to `bookings`) |
+| `mv_customer_support` | Needs `v_support_ticket_summary` (ARRAY<STRUCT> messages, STRING date) |
+| `mv_amenity_adoption` | Needs `v_property_amenity_flat` (M:M bridge) |
+
+---
+
+## Known Stray Workspace Files (to clean up)
+
+These workspace objects have doubled paths and are NOT in git. Delete when convenient.
+
+| Asset ID | Path |
+| --- | --- |
+| `58077670920109` | `...wb-metric-views/wb-metric-views/docs/research/02_data_model_analysis.md` |
+| `58077670920118` | `...wb-metric-views/wb-metric-views/docs/semantics/01_domain_context.md` |
+
+---
+
 ## Metric View Registration Pattern
 
 * Metric view YAML definitions live in `fixtures/metric_views/` and follow the `*.metric_view.yml` naming convention.

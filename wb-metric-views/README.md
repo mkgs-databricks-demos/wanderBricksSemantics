@@ -22,12 +22,21 @@ wb-metric-views/
 │   └── register_metric_views.job.yml # Registration job
 ├── src/
 │   └── register_metric_views         # Python notebook (discovers + registers metric views)
-└── fixtures/
-    ├── metric_views/                  # *.metric_view.yml definitions
-    │   └── mv_properties.metric_view.yml
-    └── sessions/                      # Session summaries
-        ├── INDEX.md
-        └── ...
+├── fixtures/
+│   ├── metric_views/                  # *.metric_view.yml definitions
+│   │   └── mv_properties.metric_view.yml
+│   └── sessions/                      # Session summaries
+│       ├── INDEX.md
+│       └── ...
+└── docs/
+    ├── research/
+    │   ├── 01_industry_domain_research.md   # Hospitality/STR industry KPI research
+    │   └── 02_data_model_analysis.md        # 16-table data model analysis and DQ flags
+    └── semantics/
+        ├── 01_domain_context.md             # Business domain framing and non-achievable KPIs
+        ├── 02_kpi_glossary.md               # 30 KPIs with formulas, synonyms, and MV mappings
+        ├── 03_dimension_hierarchies.md      # 5 dimension hierarchies with column paths
+        └── 04_business_rules.md             # 14 named rules for metric view authoring
 ```
 
 ## Quick Start
@@ -55,6 +64,20 @@ wb-metric-views/
 3. Deploy and run the registration job — it auto-discovers all `*.metric_view.yml` files.
 
 ## Documentation
+
+### Semantic Layer Reference
+
+- `docs/semantics/01_domain_context.md` — WanderBricks business domain, subdomain taxonomy, non-achievable KPIs
+- `docs/semantics/02_kpi_glossary.md` — 30 KPIs with formulas, Genie synonyms, and metric view mappings
+- `docs/semantics/03_dimension_hierarchies.md` — 5 dimension hierarchies with exact column paths
+- `docs/semantics/04_business_rules.md` — 14 named rules (RULE-01..14) to cite in metric view YAML `description:` fields
+
+### Research
+
+- `docs/research/01_industry_domain_research.md` — Hospitality and STR industry KPI research
+- `docs/research/02_data_model_analysis.md` — Full 16-table data model analysis with DQ flags and MV candidates
+
+### Databricks
 
 - [Declarative Automation Bundles in the workspace](https://docs.databricks.com/aws/en/dev-tools/bundles/workspace-bundles)
 - [Declarative Automation Bundles Configuration reference](https://docs.databricks.com/aws/en/dev-tools/bundles/reference)
