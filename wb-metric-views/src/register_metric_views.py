@@ -1,4 +1,8 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "5"
+# ///
 # DBTITLE 1,Retrieve job parameters
 catalog_use = dbutils.widgets.get("catalog_use")
 schema_use = dbutils.widgets.get("schema_use")
@@ -57,3 +61,16 @@ $$"""
 
 print(f"\n{'=' * 60}")
 print(f"Done. Registered {len(yml_files)} metric view(s) in {catalog_use}.{schema_use}")
+
+# COMMAND ----------
+
+# DBTITLE 1,Query the registered mv_properties metric view
+# MAGIC %sql
+# MAGIC SELECT
+# MAGIC   `property_type`,
+# MAGIC   MEASURE(`total_properties`) AS `total_properties`,
+# MAGIC   MEASURE(`avg_base_price`) AS `avg_base_price`,
+# MAGIC   MEASURE(`total_guest_capacity`) AS `total_guest_capacity`
+# MAGIC FROM hls_fde_dev.dev_matthew_giglia_wb_metric_views_care.mv_properties
+# MAGIC GROUP BY ALL
+# MAGIC ORDER BY `total_properties` DESC
