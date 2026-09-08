@@ -2,5 +2,5 @@ resources:
   schemas:
     wb_metric_views_schema:
       catalog_name: ${var.catalog}
-      name: wb_metric_views
+      name: wb_metric_views_care
       comment: "Schema for registered metric views built by Genie Code"
