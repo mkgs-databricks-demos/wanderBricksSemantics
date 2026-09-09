@@ -4,10 +4,12 @@
 
 Bundle for authoring and registering Unity Catalog metric views as part of the `wanderBricksSemantics-care` monorepo. Teaching project demonstrating how Genie Code builds the UC Semantic Layer.
 
-**Bundle root:** `/Users/matthew.giglia@databricks.com/wanderBricksSemantics-care/wb-metric-views/`  
-**Monorepo root:** `/Users/matthew.giglia@databricks.com/wanderBricksSemantics-care/`  
+**Bundle root:** `wanderBricksSemantics-care/wb-metric-views/` (absolute: `/Users/matthew.giglia@databricks.com/wanderBricksSemantics-care/wb-metric-views/`)  
+**Monorepo root:** `wanderBricksSemantics-care/` (absolute: `/Users/matthew.giglia@databricks.com/wanderBricksSemantics-care/`)  
 **Sibling bundle:** `wb-genie-agent` (Genie Space consuming these metric views)  
 **Schema name:** `wb_metric_views_care` (the `_care` suffix isolates this workshop instance from other `wanderBricksSemantics` deployments)
+
+> All file paths throughout this document are **relative to the bundle root** (`wb-metric-views/`) unless explicitly noted otherwise.
 
 ---
 
@@ -155,17 +157,6 @@ docs/
 | `mv_booking_funnel` | Needs `v_property_user_sessions` (no direct FK from `page_views` to `bookings`) |
 | `mv_customer_support` | Needs `v_support_ticket_summary` (ARRAY<STRUCT> messages, STRING date) |
 | `mv_amenity_adoption` | Needs `v_property_amenity_flat` (M:M bridge) |
-
----
-
-## Known Stray Workspace Files (to clean up)
-
-These workspace objects have doubled paths and are NOT in git. Delete when convenient.
-
-| Asset ID | Path |
-| --- | --- |
-| `58077670920109` | `...wb-metric-views/wb-metric-views/docs/research/02_data_model_analysis.md` |
-| `58077670920118` | `...wb-metric-views/wb-metric-views/docs/semantics/01_domain_context.md` |
 
 ---
 
