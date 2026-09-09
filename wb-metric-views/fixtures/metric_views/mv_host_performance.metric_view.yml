@@ -1,0 +1,234 @@
+version: 1.1
+
+source: samples.wanderbricks.bookings
+
+comment: >
+  Host productivity and performance metrics for WanderBricks. Uses bookings as
+  the source fact and joins through properties to reach hosts. Active host
+  denominator MUST use properties.host_id - never hosts.host_id directly, which
+  includes 80% of hosts with no listings (RULE-02).
+
+joins:
+  - name: properties
+    source: samples.wanderbricks.properties
+    on: source.property_id = properties.property_id
+    rely:
+      at_most_one_match: true
+    joins:
+      - name: hosts
+        source: samples.wanderbricks.hosts
+        on: properties.host_id = hosts.host_id
+        rely:
+          at_most_one_match: true
+
+dimensions:
+  - name: booking_date
+    expr: source.created_at
+    comment: "When the reservation was made (RULE-12: dual date)"
+    display_name: Booking Date
+    format:
+      type: date
+      date_format: year_month_day
+      leading_zeros: true
+    synonyms:
+      - reservation date
+      - date booked
+
+  - name: stay_date
+    expr: source.check_in
+    comment: "When the guest arrives (RULE-12: dual date)"
+    display_name: Stay Date
+    format:
+      type: date
+      date_format: year_month_day
+      leading_zeros: true
+    synonyms:
+      - check-in date
+      - arrival date
+
+  - name: booking_status
+    expr: source.status
+    comment: Booking lifecycle status - enables filtering by lifecycle
+    display_name: Booking Status
+    synonyms:
+      - status
+      - reservation status
+
+  - name: host_name
+    expr: properties.hosts.name
+    comment: Host name - high cardinality (3,817 active hosts), use as drill-only dimension
+    display_name: Host Name
+    synonyms:
+      - host
+      - owner
+      - property manager
+
+  - name: host_rating
+    expr: properties.hosts.rating
+    comment: Platform-assigned host quality score (1.0-5.0)
+    display_name: Host Rating
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 1
+    synonyms:
+      - host score
+      - owner rating
+
+  - name: host_quality_tier
+    expr: |-
+      CASE
+        WHEN properties.hosts.rating >= 4 THEN 'Promoter'
+        WHEN properties.hosts.rating >= 3 THEN 'Passive'
+        ELSE 'Detractor'
+      END
+    comment: >
+      NPS-style host quality bucketing on platform rating (1-5 scale).
+      Promoter = 4-5, Passive = 3-3.9, Detractor = 1-2.9.
+    display_name: Host Quality Tier
+    synonyms:
+      - host NPS tier
+      - host sentiment
+      - host quality
+
+  - name: is_verified_host
+    expr: properties.hosts.is_verified
+    comment: Whether the host has been identity-verified
+    display_name: Verified Host
+    synonyms:
+      - verified
+      - identity verified
+
+  - name: host_join_date
+    expr: properties.hosts.joined_at
+    comment: When the host joined the platform - enables vintage cohort analysis
+    display_name: Host Join Date
+    format:
+      type: date
+      date_format: year_month_day
+      leading_zeros: true
+    synonyms:
+      - host since
+      - host tenure
+      - joined date
+
+  - name: property_type
+    expr: properties.property_type
+    comment: Property type via properties join
+    display_name: Property Type
+    synonyms:
+      - listing type
+      - accommodation type
+
+measures:
+  - name: active_host_count
+    expr: COUNT(DISTINCT properties.host_id)
+    comment: "Distinct hosts with at least one booking (RULE-02: via properties.host_id, not hosts.host_id)"
+    display_name: Active Hosts
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+    synonyms:
+      - host count
+      - active hosts
+      - hosting count
+      - engaged hosts
+
+  - name: total_host_bookings
+    expr: COUNT(*)
+    comment: Total booking transactions across all statuses for host analysis
+    display_name: Total Host Bookings
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+      abbreviation: compact
+    synonyms:
+      - bookings
+      - reservations
+      - host booking volume
+
+  - name: host_revenue
+    expr: |-
+      SUM(CASE WHEN source.status = 'completed'
+               THEN source.total_amount ELSE 0 END)
+    comment: "Realized revenue from completed stays (RULE-01: completed only)"
+    display_name: Host Revenue
+    format:
+      type: currency
+      currency_code: USD
+      decimal_places:
+        type: exact
+        places: 2
+      abbreviation: compact
+    synonyms:
+      - host earnings
+      - total host earnings
+
+  - name: bookings_per_host
+    expr: MEASURE(total_host_bookings) / NULLIF(MEASURE(active_host_count), 0)
+    comment: Average bookings per active host - measures host productivity
+    display_name: Bookings per Host
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 1
+    synonyms:
+      - host productivity
+      - reservations per host
+
+  - name: revenue_per_host
+    expr: MEASURE(host_revenue) / NULLIF(MEASURE(active_host_count), 0)
+    comment: "Average realized revenue per active host (RULE-01 + RULE-02)"
+    display_name: Revenue per Host
+    format:
+      type: currency
+      currency_code: USD
+      decimal_places:
+        type: exact
+        places: 2
+    synonyms:
+      - host earnings
+      - earnings per host
+      - average host revenue
+
+  - name: host_promoter_count
+    expr: COUNT(DISTINCT CASE WHEN properties.hosts.rating >= 4 THEN properties.host_id END)
+    comment: Distinct hosts with platform rating >= 4 (Promoters)
+    display_name: Promoter Hosts
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+
+  - name: host_detractor_count
+    expr: COUNT(DISTINCT CASE WHEN properties.hosts.rating <= 2 THEN properties.host_id END)
+    comment: Distinct hosts with platform rating <= 2 (Detractors)
+    display_name: Detractor Hosts
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+
+  - name: host_nps
+    expr: (MEASURE(host_promoter_count) - MEASURE(host_detractor_count)) / NULLIF(MEASURE(active_host_count), 0) * 100
+    comment: >
+      Host ecosystem NPS: (% Promoter hosts - % Detractor hosts) x 100.
+      Range -100 to +100. Denominator is active hosts via properties.host_id (RULE-02).
+    display_name: Host NPS
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 1
+    synonyms:
+      - host net promoter score
+      - host satisfaction
+      - host quality score

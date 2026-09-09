@@ -1,0 +1,164 @@
+version: 1.1
+
+source: >
+  SELECT
+    ticket_id,
+    user_id,
+    support_agent_id,
+    CAST(created_at AS TIMESTAMP) AS ticket_date,
+    SIZE(messages) AS message_count,
+    messages[0].sentiment AS initial_sentiment,
+    messages[SIZE(messages) - 1].sentiment AS final_sentiment,
+    messages[SIZE(messages) - 1].sender AS last_responder
+  FROM samples.wanderbricks.customer_support_logs
+
+comment: >
+  Customer support ticket metrics (Tier 2 — SQL-as-source). Extracts
+  structured fields from the semi-structured messages array: message count,
+  initial sentiment (first message), final sentiment (last message), and
+  last responder. 1,900 tickets. Each message struct has
+  (message, sender, sentiment, timestamp).
+
+joins:
+  - name: users
+    source: samples.wanderbricks.users
+    on: source.user_id = users.user_id
+    rely:
+      at_most_one_match: true
+
+dimensions:
+  - name: ticket_date
+    expr: CAST(source.ticket_date AS DATE)
+    comment: Date the support ticket was created
+    display_name: Ticket Date
+    format:
+      type: date
+      date_format: year_month_day
+      leading_zeros: true
+    synonyms:
+      - support date
+      - case date
+      - opened date
+
+  - name: support_agent
+    expr: source.support_agent_id
+    comment: Support agent identifier (e.g., AGENT-021)
+    display_name: Support Agent
+    synonyms:
+      - agent
+      - representative
+      - case handler
+
+  - name: initial_sentiment
+    expr: source.initial_sentiment
+    comment: Sentiment of the customer's first message (angry, skeptical, optimistic, etc.)
+    display_name: Initial Sentiment
+    synonyms:
+      - opening sentiment
+      - first impression
+      - customer mood
+
+  - name: final_sentiment
+    expr: source.final_sentiment
+    comment: Sentiment of the last message in the thread — proxy for resolution quality
+    display_name: Final Sentiment
+    synonyms:
+      - resolution sentiment
+      - closing mood
+      - outcome sentiment
+
+  - name: last_responder
+    expr: source.last_responder
+    comment: Who sent the last message (agent or user) — proxy for resolution ownership
+    display_name: Last Responder
+    synonyms:
+      - final sender
+      - closer
+
+  - name: user_type
+    expr: users.user_type
+    comment: Customer segment (guest, host, business, etc.)
+    display_name: User Type
+    synonyms:
+      - customer type
+      - user segment
+
+measures:
+  - name: total_tickets
+    expr: COUNT(*)
+    comment: Total support tickets
+    display_name: Total Tickets
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+      abbreviation: compact
+    synonyms:
+      - ticket count
+      - support cases
+      - inquiries
+
+  - name: avg_messages_per_ticket
+    expr: AVG(source.message_count)
+    comment: Average messages per ticket thread — proxy for resolution complexity
+    display_name: Avg Messages per Ticket
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 1
+    synonyms:
+      - thread length
+      - conversation depth
+
+  - name: angry_ticket_rate
+    expr: COUNT_IF(source.initial_sentiment = 'angry') / NULLIF(COUNT(*), 0)
+    comment: Share of tickets where the customer's first message was angry
+    display_name: Angry Ticket Rate
+    format:
+      type: percentage
+      decimal_places:
+        type: exact
+        places: 1
+    synonyms:
+      - escalation rate
+      - anger rate
+
+  - name: positive_resolution_rate
+    expr: |-
+      COUNT_IF(source.final_sentiment IN ('caring', 'helpful', 'optimistic', 'sincere'))
+      / NULLIF(COUNT(*), 0)
+    comment: Share of tickets where the final sentiment is positive — proxy for successful resolution
+    display_name: Positive Resolution Rate
+    format:
+      type: percentage
+      decimal_places:
+        type: exact
+        places: 1
+    synonyms:
+      - resolution success rate
+      - positive outcome rate
+      - CSAT proxy
+
+  - name: sentiment_improvement_rate
+    expr: |-
+      COUNT_IF(
+        source.initial_sentiment IN ('angry', 'negative', 'skeptical')
+        AND source.final_sentiment IN ('caring', 'helpful', 'optimistic', 'sincere')
+      ) / NULLIF(
+        COUNT_IF(source.initial_sentiment IN ('angry', 'negative', 'skeptical')), 0
+      )
+    comment: >
+      Of tickets that started negative, what share ended positive?
+      Measures support team's ability to turn around unhappy customers.
+    display_name: Sentiment Turnaround Rate
+    format:
+      type: percentage
+      decimal_places:
+        type: exact
+        places: 1
+    synonyms:
+      - turnaround rate
+      - save rate
+      - recovery rate

@@ -1,0 +1,150 @@
+version: 1.1
+
+source: >
+  SELECT
+    pv.view_id,
+    pv.user_id,
+    pv.property_id,
+    CAST(pv.timestamp AS DATE) AS view_date,
+    pv.device_type,
+    pv.referrer,
+    b.booking_id,
+    CAST(b.created_at AS DATE) AS booking_date,
+    b.total_amount AS booking_amount,
+    b.status AS booking_status
+  FROM samples.wanderbricks.page_views pv
+  LEFT JOIN samples.wanderbricks.bookings b
+    ON pv.property_id = b.property_id
+    AND pv.user_id = b.user_id
+    AND b.created_at BETWEEN pv.timestamp AND DATE_ADD(pv.timestamp, 30)
+
+comment: >
+  Booking funnel conversion metrics (Tier 2 — SQL-as-source). Joins page views
+  to bookings via a 30-day attribution window on the same property and user.
+  A page view "converts" if a booking exists within 30 days. One-to-many fan-out
+  is expected when multiple views precede a single booking.
+
+dimensions:
+  - name: view_date
+    expr: view_date
+    comment: Date the property listing was viewed
+    display_name: View Date
+    format:
+      type: date
+      date_format: year_month_day
+      leading_zeros: true
+    synonyms:
+      - page view date
+      - visit date
+
+  - name: device_type
+    expr: device_type
+    comment: Device used to view the listing (mobile, desktop, tablet)
+    display_name: Device Type
+    synonyms:
+      - device
+      - platform
+      - browser type
+
+  - name: referrer
+    expr: referrer
+    comment: Traffic source that drove the page view
+    display_name: Referrer
+    synonyms:
+      - traffic source
+      - acquisition channel
+      - source
+
+  - name: booking_status
+    expr: booking_status
+    comment: Status of the attributed booking (NULL if no conversion)
+    display_name: Booking Status
+    synonyms:
+      - conversion status
+      - reservation status
+
+measures:
+  - name: total_funnel_views
+    expr: COUNT(*)
+    comment: Total page view events entering the funnel (includes fan-out from multi-view attribution)
+    display_name: Funnel Views
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+      abbreviation: compact
+    synonyms:
+      - total views
+      - page views
+      - impressions
+
+  - name: unique_viewers
+    expr: COUNT(DISTINCT user_id)
+    comment: Distinct users who viewed a property listing
+    display_name: Unique Viewers
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+      abbreviation: compact
+    synonyms:
+      - unique visitors
+      - distinct viewers
+
+  - name: converted_views
+    expr: COUNT(booking_id)
+    comment: Page views that attributed to a booking within 30 days (non-null booking_id)
+    display_name: Converted Views
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+      abbreviation: compact
+    synonyms:
+      - conversions
+      - attributed views
+
+  - name: view_to_book_rate
+    expr: COUNT(booking_id) / NULLIF(COUNT(*), 0)
+    comment: Share of page views that convert to a booking within 30 days
+    display_name: View-to-Book Rate
+    format:
+      type: percentage
+      decimal_places:
+        type: exact
+        places: 2
+    synonyms:
+      - conversion rate
+      - CVR
+      - booking rate
+
+  - name: attributed_revenue
+    expr: SUM(booking_amount)
+    comment: Total booking value attributed to page view conversions
+    display_name: Attributed Revenue
+    format:
+      type: currency
+      currency_code: USD
+      decimal_places:
+        type: exact
+        places: 2
+      abbreviation: compact
+    synonyms:
+      - conversion revenue
+      - funnel revenue
+
+  - name: avg_views_per_booking
+    expr: CAST(COUNT(*) AS DOUBLE) / NULLIF(COUNT(DISTINCT booking_id), 0)
+    comment: Average page views before a booking — measures funnel efficiency
+    display_name: Avg Views per Booking
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 1
+    synonyms:
+      - views to book
+      - funnel depth

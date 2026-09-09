@@ -1,8 +1,30 @@
 version: 1.1
 
-source: "samples.wanderbricks.properties"
+source: samples.wanderbricks.properties
 
-comment: "Property listing metrics for WanderBricks vacation rentals"
+comment: >
+  Property listing inventory and supply metrics for WanderBricks vacation
+  rentals. Extended with destination geography and host dimensions. base_price
+  is the host-set asking price - NOT the realized rate (RULE-11). Host dimensions
+  use properties.host_id to identify active hosts only (RULE-02).
+
+joins:
+  - name: destinations
+    source: samples.wanderbricks.destinations
+    on: source.destination_id = destinations.destination_id
+    rely:
+      at_most_one_match: true
+    joins:
+      - name: countries
+        source: samples.wanderbricks.countries
+        on: destinations.country = countries.country
+        rely:
+          at_most_one_match: true
+  - name: hosts
+    source: samples.wanderbricks.hosts
+    on: source.host_id = hosts.host_id
+    rely:
+      at_most_one_match: true
 
 dimensions:
   - name: property_type
@@ -50,6 +72,100 @@ dimensions:
       - listing date
       - date added
 
+  - name: destination_name
+    expr: destinations.destination
+    comment: Destination market name (42 destinations)
+    display_name: Destination
+    synonyms:
+      - location
+      - city
+      - market
+      - travel destination
+
+  - name: destination_state
+    expr: destinations.state_or_province
+    comment: State or province of the destination
+    display_name: State / Province
+    synonyms:
+      - state
+      - province
+      - region
+
+  - name: destination_country
+    expr: destinations.country
+    comment: "Country of the destination (RULE-09: 0 orphans verified)"
+    display_name: Country
+    synonyms:
+      - country
+      - nation
+
+  - name: continent
+    expr: destinations.countries.continent
+    comment: Continent via destinations -> countries snowflake join
+    display_name: Continent
+    synonyms:
+      - region
+      - world region
+
+  - name: host_name
+    expr: hosts.name
+    comment: Host name - high cardinality (3,817 active hosts), use as drill-only dimension
+    display_name: Host Name
+    synonyms:
+      - host
+      - owner
+      - property manager
+
+  - name: host_rating
+    expr: hosts.rating
+    comment: Platform-assigned host quality score (1.0-5.0)
+    display_name: Host Rating
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 1
+    synonyms:
+      - host score
+      - host quality
+      - owner rating
+
+  - name: is_verified_host
+    expr: hosts.is_verified
+    comment: Whether the host has been identity-verified
+    display_name: Verified Host
+    synonyms:
+      - verified
+      - identity verified
+      - host verified
+
+  - name: host_join_date
+    expr: hosts.joined_at
+    comment: When the host joined the platform - enables vintage cohort analysis
+    display_name: Host Join Date
+    format:
+      type: date
+      date_format: year_month_day
+      leading_zeros: true
+    synonyms:
+      - host since
+      - host tenure
+      - joined date
+
+  - name: max_guests
+    expr: max_guests
+    comment: Maximum guest capacity for the property
+    display_name: Max Guests
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+    synonyms:
+      - capacity
+      - guest limit
+      - sleeps
+
 measures:
   - name: total_properties
     expr: count(property_id)
@@ -91,3 +207,56 @@ measures:
     synonyms:
       - total capacity
       - total max guests
+
+  - name: avg_capacity_per_property
+    expr: AVG(max_guests)
+    comment: Average maximum guest capacity per property
+    display_name: Avg Capacity per Property
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 1
+    synonyms:
+      - average guest capacity
+      - average property size
+
+  - name: avg_host_rating
+    expr: AVG(hosts.rating)
+    comment: Average platform-assigned host rating via hosts join
+    display_name: Avg Host Rating
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 2
+    synonyms:
+      - average host score
+      - host quality score
+
+  - name: verified_host_count
+    expr: COUNT_IF(hosts.is_verified = true)
+    comment: "Number of verified hosts with property listings (RULE-02: active hosts only)"
+    display_name: Verified Hosts
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+    synonyms:
+      - verified host count
+      - identity verified hosts
+
+  - name: avg_host_portfolio_size
+    expr: CAST(COUNT(property_id) AS DOUBLE) / NULLIF(COUNT(DISTINCT host_id), 0)
+    comment: "Average listings per host (RULE-02: denominator is active hosts with listings)"
+    display_name: Avg Listings per Host
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 1
+    synonyms:
+      - listings per host
+      - properties per host
+      - host portfolio

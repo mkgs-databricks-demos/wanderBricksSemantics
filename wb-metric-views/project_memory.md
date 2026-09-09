@@ -103,16 +103,18 @@ This ensures dependency ordering, avoids drift between targets, and makes refact
 
 ## Current Phase
 
-**Phase 3 ready** — all research and semantic documentation complete. Next work is YAML generation.
+**Phase 3 complete** — 10 metric views authored, registered, and deployed.
 
 | Phase | Status | Artifacts |
 | --- | --- | --- |
 | Phase 1 — Industry domain research | ✅ Complete | `docs/research/01_industry_domain_research.md` |
 | Phase 2 — Data model analysis | ✅ Complete | `docs/research/02_data_model_analysis.md` |
 | Phase 2.5 — Semantic glossary | ✅ Complete | `docs/semantics/` (4 files) |
-| Phase 3 — Metric view YAML generation | 🔜 Next | `fixtures/metric_views/*.metric_view.yml` |
-
-**Phase 3 authoring order:** `mv_bookings` → extend `mv_properties` → `mv_payments` → `mv_reviews` → `mv_host_performance` → `mv_page_views`.
+| Phase 3 — Tier 1 MVs (direct table source) | ✅ Complete | `mv_bookings`, `mv_properties`, `mv_payments`, `mv_reviews`, `mv_host_performance`, `mv_page_views` |
+| Phase 3 — Tier 2 MVs (SQL-as-source) | ✅ Complete | `mv_booking_funnel`, `mv_amenity_adoption`, `mv_customer_support` |
+| Phase 3 — Advanced MVs (window, AI) | ✅ Complete | Window measures on `mv_bookings`, `mv_demand_forecast` (AI_FORECAST) |
+| Phase 3 — NPS patterns | ✅ Complete | `sentiment_tier`/`nps_score` on `mv_reviews`, `host_quality_tier`/`host_nps` on `mv_host_performance` |
+| Phase 4 — Deploy, review, certify | 🔜 Next | Governance review, UC tags, Genie Agent handoff to L200-B |
 
 ---
 
@@ -139,24 +141,30 @@ docs/
 
 ## Metric View Candidates
 
-### Tier 1 — Immediately Buildable
+### Tier 1 — Direct Table Source (6 MVs)
 
-| MV Name | Source Fact | Key Joins |
+| MV Name | Source Fact | Key Joins | Notable Features |
+| --- | --- | --- | --- |
+| `mv_bookings` | `bookings` | `properties`, `users`, `destinations`, `countries` | 17 base measures + `booking_month` dim + 7 window measures (trailing 30d, cumulative, MoM) |
+| `mv_properties` | `properties` | `destinations`, `countries`, `hosts` | 13 dimensions, 7 measures including host portfolio metrics |
+| `mv_payments` | `payments` | `bookings` | Cash-basis revenue; RULE-05/14 compliance |
+| `mv_reviews` | `reviews` (`is_deleted=false`) | `bookings` → `properties` → `destinations` | `sentiment_tier` (NPS bucketing), `nps_score` (composable via MEASURE) |
+| `mv_host_performance` | `bookings` | `properties` → `hosts` | `host_quality_tier` (NPS), `host_nps` (DISTINCT host-level) |
+| `mv_page_views` | `page_views` | `properties`, `destinations` | Traffic demand signals; RULE-06 compliance |
+
+### Tier 2 — SQL-as-Source (3 MVs)
+
+| MV Name | SQL Pattern | Status |
 | --- | --- | --- |
-| `mv_bookings` | `bookings` | `properties`, `users`, `destinations` |
-| `mv_properties` *(extend)* | `properties` | `destinations`, `hosts` |
-| `mv_payments` | `payments` | `bookings` (bridge) |
-| `mv_reviews` | `reviews` (`is_deleted=false`) | `bookings`, `properties`, `destinations` |
-| `mv_host_performance` | `bookings` | `properties` → `hosts` |
-| `mv_page_views` | `page_views` | `properties`, `destinations` |
+| `mv_booking_funnel` | LEFT JOIN page_views→bookings with 30-day attribution window | ✅ Registered (0 conversions due to sample data temporal gap — page_views Sept 2025 vs bookings end Jul 2025) |
+| `mv_amenity_adoption` | JOIN property_amenities bridge → amenities dimension | ✅ Verified — 4 categories, luxury rate working |
+| `mv_customer_support` | CAST(created_at), SIZE(messages), array indexing for sentiment | ✅ Verified — sentiment turnaround rate working |
 
-### Tier 2 — Requires Base View First
+### Advanced (1 MV)
 
-| MV Name | Blocker |
-| --- | --- |
-| `mv_booking_funnel` | Needs `v_property_user_sessions` (no direct FK from `page_views` to `bookings`) |
-| `mv_customer_support` | Needs `v_support_ticket_summary` (ARRAY<STRUCT> messages, STRING date) |
-| `mv_amenity_adoption` | Needs `v_property_amenity_flat` (M:M bridge) |
+| MV Name | Pattern | Status |
+| --- | --- | --- |
+| `mv_demand_forecast` | L200H Option A: inline AI_FORECAST TVF, dual-value (bookings + revenue) | ✅ Registered, pending AI_FORECAST preview enablement |
 
 ---
 

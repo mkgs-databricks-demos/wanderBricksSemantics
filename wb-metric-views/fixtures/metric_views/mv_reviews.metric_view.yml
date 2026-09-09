@@ -1,0 +1,182 @@
+version: 1.1
+
+source: samples.wanderbricks.reviews
+
+filter: is_deleted = false
+
+comment: >
+  Guest satisfaction and review metrics for WanderBricks. All queries
+  automatically filter is_deleted = false via the top-level filter field,
+  excluding 476 soft-deleted rows with NULL ratings (RULE-04). Review volume
+  uses COUNT(*) because review_id has 98,793 duplicates across 99,793 rows
+  (RULE-03). Ratings reflect a mix of guest and host reviews - no reviewer_type
+  column exists (RULE-13).
+
+joins:
+  - name: bookings
+    source: samples.wanderbricks.bookings
+    on: source.booking_id = bookings.booking_id
+    rely:
+      at_most_one_match: true
+    joins:
+      - name: properties
+        source: samples.wanderbricks.properties
+        on: bookings.property_id = properties.property_id
+        rely:
+          at_most_one_match: true
+        joins:
+          - name: destinations
+            source: samples.wanderbricks.destinations
+            on: properties.destination_id = destinations.destination_id
+            rely:
+              at_most_one_match: true
+
+dimensions:
+  - name: review_date
+    expr: source.created_at
+    comment: When the review was submitted
+    display_name: Review Date
+    format:
+      type: date
+      date_format: year_month_day
+      leading_zeros: true
+    synonyms:
+      - review created
+      - date reviewed
+
+  - name: rating
+    expr: source.rating
+    comment: "Review rating on 1-5 scale. Useful as dimension for distribution analysis (GROUP BY rating)."
+    display_name: Rating
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+    synonyms:
+      - star rating
+      - review score
+      - stars
+
+  - name: sentiment_tier
+    expr: |-
+      CASE
+        WHEN source.rating >= 4 THEN 'Promoter'
+        WHEN source.rating = 3 THEN 'Passive'
+        ELSE 'Detractor'
+      END
+    comment: >
+      NPS-style sentiment bucketing adapted for 1-5 star scale.
+      Promoter = 4-5 stars, Passive = 3 stars, Detractor = 1-2 stars.
+      Thresholds align with positive_review_rate (>=4) and low_review_rate (<=2).
+    display_name: Sentiment Tier
+    synonyms:
+      - NPS tier
+      - sentiment
+      - promoter detractor
+      - NPS category
+      - satisfaction tier
+
+  - name: property_type
+    expr: bookings.properties.property_type
+    comment: Property type via bookings -> properties nested join
+    display_name: Property Type
+    synonyms:
+      - listing type
+      - accommodation type
+
+  - name: destination_name
+    expr: bookings.properties.destinations.destination
+    comment: Destination market via bookings -> properties -> destinations nested join
+    display_name: Destination
+    synonyms:
+      - location
+      - city
+      - market
+
+  - name: booking_status
+    expr: bookings.status
+    comment: Booking lifecycle status - enables filtering reviews by booking lifecycle
+    display_name: Booking Status
+    synonyms:
+      - reservation status
+
+measures:
+  - name: review_volume
+    expr: COUNT(*)
+    comment: "Total active (non-deleted) reviews (RULE-03: COUNT(*) only, filter handles is_deleted)"
+    display_name: Total Reviews
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+      abbreviation: compact
+    synonyms:
+      - total reviews
+      - review count
+      - reviews received
+
+  - name: avg_property_rating
+    expr: AVG(source.rating)
+    comment: "Average review rating (1.0-5.0). Platform avg: 3.01. Mixed guest+host perspective (RULE-13)."
+    display_name: Avg Property Rating
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 2
+    synonyms:
+      - average rating
+      - review score
+      - star rating
+      - guest rating
+
+  - name: positive_review_rate
+    expr: COUNT_IF(source.rating >= 4) / NULLIF(COUNT(*), 0)
+    comment: Share of reviews rated 4 or 5 stars - positive sentiment indicator
+    display_name: Positive Review Rate
+    format:
+      type: percentage
+      decimal_places:
+        type: exact
+        places: 1
+    synonyms:
+      - positive reviews
+      - high rating rate
+      - 4+ star rate
+      - favorable reviews
+
+  - name: low_review_rate
+    expr: COUNT_IF(source.rating <= 2) / NULLIF(COUNT(*), 0)
+    comment: Share of reviews rated 1 or 2 stars - negative sentiment indicator
+    display_name: Low Review Rate
+    format:
+      type: percentage
+      decimal_places:
+        type: exact
+        places: 1
+    synonyms:
+      - negative reviews
+      - low rating rate
+      - 1-2 star rate
+      - poor reviews
+
+  - name: nps_score
+    expr: (MEASURE(positive_review_rate) - MEASURE(low_review_rate)) * 100
+    comment: >
+      Net Promoter-style score adapted for 1-5 star reviews.
+      Formula: (% Promoters - % Detractors) x 100. Range: -100 to +100.
+      Composes positive_review_rate (4-5 stars) and low_review_rate (1-2 stars)
+      via MEASURE() for granularity-safe reuse.
+    display_name: NPS Score
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 1
+    synonyms:
+      - net promoter score
+      - NPS
+      - satisfaction score
+      - net satisfaction

@@ -1,0 +1,558 @@
+version: 1.1
+
+source: samples.wanderbricks.bookings
+
+comment: >
+  Core booking demand and revenue metrics for the WanderBricks marketplace.
+  Revenue measures default to confirmed + completed bookings unless explicitly
+  reporting gross demand (RULE-01). Booking date and stay date are independently
+  filterable (RULE-12). The realized rate (avg_realized_rate) measures earned
+  revenue per night and is NOT the same as the host-set asking price on
+  mv_properties (RULE-11).
+
+joins:
+  - name: properties
+    source: samples.wanderbricks.properties
+    on: source.property_id = properties.property_id
+    rely:
+      at_most_one_match: true
+    joins:
+      - name: destinations
+        source: samples.wanderbricks.destinations
+        on: properties.destination_id = destinations.destination_id
+        rely:
+          at_most_one_match: true
+        joins:
+          - name: countries
+            source: samples.wanderbricks.countries
+            on: destinations.country = countries.country
+            rely:
+              at_most_one_match: true
+  - name: users
+    source: samples.wanderbricks.users
+    on: source.user_id = users.user_id
+    rely:
+      at_most_one_match: true
+
+dimensions:
+  - name: booking_date
+    expr: source.created_at
+    comment: "When the reservation was made - demand analysis, lead-time trends (RULE-12: dual date)"
+    display_name: Booking Date
+    format:
+      type: date
+      date_format: year_month_day
+      leading_zeros: true
+    synonyms:
+      - reservation date
+      - date booked
+      - booking created
+
+  - name: stay_date
+    expr: source.check_in
+    comment: "When the guest arrives - revenue attribution, seasonal patterns (RULE-12: dual date)"
+    display_name: Stay Date
+    format:
+      type: date
+      date_format: year_month_day
+      leading_zeros: true
+    synonyms:
+      - check-in date
+      - arrival date
+      - check in
+      - arrival
+
+  - name: check_out_date
+    expr: source.check_out
+    comment: Guest departure date - needed for ALOS derivation context
+    display_name: Check-Out Date
+    format:
+      type: date
+      date_format: year_month_day
+      leading_zeros: true
+    synonyms:
+      - departure date
+      - check out
+      - checkout
+
+  - name: booking_status
+    expr: source.status
+    comment: "Booking lifecycle status: pending, confirmed, cancelled, completed"
+    display_name: Booking Status
+    synonyms:
+      - status
+      - reservation status
+      - booking state
+
+  - name: guests_count
+    expr: source.guests_count
+    comment: Number of guests for this booking
+    display_name: Number of Guests
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+    synonyms:
+      - party size
+      - guest count
+      - travelers
+
+  - name: property_type
+    expr: properties.property_type
+    comment: "Type of property listing (Urban Year-Round, Summer Getaway, Historical Place, Ski Resort)"
+    display_name: Property Type
+    synonyms:
+      - listing type
+      - accommodation type
+      - property category
+
+  - name: destination_name
+    expr: properties.destinations.destination
+    comment: Destination market name (42 destinations)
+    display_name: Destination
+    synonyms:
+      - location
+      - city
+      - market
+      - travel destination
+
+  - name: destination_country
+    expr: properties.destinations.country
+    comment: "Country of the destination (RULE-09: string FK, 0 orphans verified)"
+    display_name: Destination Country
+    synonyms:
+      - country
+      - nation
+
+  - name: continent
+    expr: properties.destinations.countries.continent
+    comment: Continent of the destination via countries snowflake join
+    display_name: Continent
+    synonyms:
+      - region
+      - world region
+
+  - name: user_type
+    expr: users.user_type
+    comment: "Guest type: individual or business (~50/50 split)"
+    display_name: Guest Type
+    synonyms:
+      - customer type
+      - traveler type
+      - user segment
+
+  - name: booking_month
+    expr: DATE_TRUNC('MONTH', source.created_at)
+    comment: Month of booking creation — order dimension for month-over-month window measures
+    display_name: Booking Month
+    format:
+      type: date
+      date_format: year_month_day
+      leading_zeros: true
+    synonyms:
+      - month
+      - reservation month
+
+measures:
+  - name: total_bookings
+    expr: COUNT(*)
+    comment: "Total booking transactions across all statuses (RULE-01: pending 43.7%, confirmed 24.8%, cancelled 21.2%, completed 10.3%)"
+    display_name: Total Bookings
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+      abbreviation: compact
+    synonyms:
+      - reservations
+      - trips booked
+      - booking volume
+      - booking count
+
+  - name: confirmed_bookings
+    expr: COUNT_IF(source.status = 'confirmed')
+    comment: Bookings accepted by the host and awaiting stay completion
+    display_name: Confirmed Bookings
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+      abbreviation: compact
+    synonyms:
+      - accepted bookings
+      - active bookings
+      - upcoming bookings
+
+  - name: completed_bookings
+    expr: COUNT_IF(source.status = 'completed')
+    comment: Bookings where the guest stay has been fully completed
+    display_name: Completed Bookings
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+      abbreviation: compact
+    synonyms:
+      - completed stays
+      - finished stays
+      - realized bookings
+
+  - name: cancelled_bookings
+    expr: COUNT_IF(source.status = 'cancelled')
+    comment: Bookings cancelled before the stay occurred
+    display_name: Cancelled Bookings
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+      abbreviation: compact
+    synonyms:
+      - cancellations
+      - booking cancellations
+
+  - name: cancellation_rate
+    expr: MEASURE(cancelled_bookings) / NULLIF(MEASURE(total_bookings), 0)
+    comment: "Share of all bookings that were cancelled. WanderBricks baseline: 21.2%."
+    display_name: Cancellation Rate
+    format:
+      type: percentage
+      decimal_places:
+        type: exact
+        places: 1
+    synonyms:
+      - cancel rate
+      - cancellation percentage
+
+  - name: avg_length_of_stay
+    expr: AVG(DATEDIFF(source.check_out, source.check_in))
+    comment: Average number of nights per booking - key revenue management lever
+    display_name: Avg Length of Stay
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 1
+    synonyms:
+      - ALOS
+      - average stay
+      - average nights
+      - trip length
+
+  - name: avg_booking_lead_time
+    expr: AVG(DATEDIFF(source.check_in, source.created_at))
+    comment: Average days between booking creation and check-in - affects pricing strategy
+    display_name: Avg Booking Lead Time
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 1
+    synonyms:
+      - booking window
+      - lead time
+      - days in advance
+
+  - name: guests_served
+    expr: |-
+      SUM(CASE WHEN source.status IN ('confirmed', 'completed')
+               THEN source.guests_count ELSE 0 END)
+    comment: "Total guest-count across confirmed and completed bookings (RULE-01: revenue-qualified only)"
+    display_name: Guests Served
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+      abbreviation: compact
+    synonyms:
+      - total guests
+      - guests hosted
+      - travelers served
+
+  - name: total_booking_value
+    expr: SUM(source.total_amount)
+    comment: "Gross booking value across all statuses - demand signal only, NOT a revenue metric (RULE-01)"
+    display_name: Total Booking Value (GBV)
+    format:
+      type: currency
+      currency_code: USD
+      decimal_places:
+        type: exact
+        places: 2
+      abbreviation: compact
+    synonyms:
+      - gross booking value
+      - GBV
+      - total demand
+
+  - name: actual_revenue
+    expr: |-
+      SUM(CASE WHEN source.status = 'completed'
+               THEN source.total_amount ELSE 0 END)
+    comment: "Revenue from completed stays only - the canonical revenue metric (RULE-01: completed only)"
+    display_name: Actual Revenue
+    format:
+      type: currency
+      currency_code: USD
+      decimal_places:
+        type: exact
+        places: 2
+      abbreviation: compact
+    synonyms:
+      - realized revenue
+      - earned revenue
+      - recognized revenue
+
+  - name: forecasted_revenue
+    expr: |-
+      SUM(CASE WHEN source.status IN ('confirmed', 'pending')
+               THEN source.total_amount ELSE 0 END)
+    comment: "Expected revenue from upcoming bookings (RULE-01: pending carries high uncertainty - 43.7% of bookings)"
+    display_name: Forecasted Revenue
+    format:
+      type: currency
+      currency_code: USD
+      decimal_places:
+        type: exact
+        places: 2
+      abbreviation: compact
+    synonyms:
+      - pipeline revenue
+      - expected revenue
+      - future revenue
+
+  - name: confirmed_revenue
+    expr: |-
+      SUM(CASE WHEN source.status = 'confirmed'
+               THEN source.total_amount ELSE 0 END)
+    comment: Subset of forecasted revenue - accepted bookings awaiting stay completion
+    display_name: Confirmed Revenue
+    format:
+      type: currency
+      currency_code: USD
+      decimal_places:
+        type: exact
+        places: 2
+      abbreviation: compact
+    synonyms:
+      - accepted revenue
+      - committed revenue
+
+  - name: pending_revenue
+    expr: |-
+      SUM(CASE WHEN source.status = 'pending'
+               THEN source.total_amount ELSE 0 END)
+    comment: "Revenue from pending bookings not yet host-accepted - highest uncertainty tier (43.7%, RULE-01)"
+    display_name: Pending Revenue
+    format:
+      type: currency
+      currency_code: USD
+      decimal_places:
+        type: exact
+        places: 2
+      abbreviation: compact
+    synonyms:
+      - unconfirmed revenue
+      - pending bookings value
+
+  - name: avg_booking_value
+    expr: AVG(source.total_amount)
+    comment: Average booking transaction size across all statuses - filter by booking_status for tier-specific ABV
+    display_name: Avg Booking Value
+    format:
+      type: currency
+      currency_code: USD
+      decimal_places:
+        type: exact
+        places: 2
+    synonyms:
+      - ABV
+      - average transaction value
+      - average booking price
+
+  - name: avg_realized_rate
+    expr: |-
+      AVG(CASE WHEN source.status IN ('confirmed', 'completed')
+               THEN source.total_amount / NULLIF(DATEDIFF(source.check_out, source.check_in), 0)
+           END)
+    comment: "Average revenue per booked night (ADR). NOT avg_base_price (RULE-11). Uses confirmed + completed (RULE-01)."
+    display_name: Avg Realized Rate (ADR)
+    format:
+      type: currency
+      currency_code: USD
+      decimal_places:
+        type: exact
+        places: 2
+    synonyms:
+      - ADR
+      - average daily rate
+      - revenue per night
+      - earned rate
+
+  - name: bookings_per_booked_property
+    expr: CAST(COUNT(*) AS DOUBLE) / NULLIF(COUNT(DISTINCT source.property_id), 0)
+    comment: "Average bookings per property booked at least once. Denominator = booked properties, not all properties."
+    display_name: Bookings per Property
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 1
+    synonyms:
+      - listing productivity
+      - demand per listing
+      - reservations per property
+
+  - name: revenue_per_booked_property
+    expr: |-
+      SUM(CASE WHEN source.status = 'completed' THEN source.total_amount ELSE 0 END)
+      / NULLIF(COUNT(DISTINCT CASE WHEN source.status = 'completed'
+                                    THEN source.property_id END), 0)
+    comment: "Realized revenue per property with completed bookings. NOT true RevPAR (requires available-nights). RULE-01."
+    display_name: Revenue per Property
+    format:
+      type: currency
+      currency_code: USD
+      decimal_places:
+        type: exact
+        places: 2
+    synonyms:
+      - RevPAR proxy
+      - yield per property
+
+  # --- Window Measures (Advanced) ---
+
+  - name: t30d_bookings
+    expr: MEASURE(total_bookings)
+    comment: Trailing 30-day rolling booking count — smooths daily volatility for trend analysis
+    display_name: 30-Day Bookings
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+      abbreviation: compact
+    window:
+      - order: booking_date
+        range: trailing 30 day
+        semiadditive: last
+    synonyms:
+      - rolling 30d bookings
+      - trailing month bookings
+
+  - name: cumulative_revenue
+    expr: MEASURE(actual_revenue)
+    comment: Running total of realized revenue over time — shows revenue accumulation trajectory
+    display_name: Cumulative Revenue
+    format:
+      type: currency
+      currency_code: USD
+      decimal_places:
+        type: exact
+        places: 2
+      abbreviation: compact
+    window:
+      - order: booking_date
+        range: cumulative
+        semiadditive: last
+    synonyms:
+      - running total revenue
+      - YTD revenue
+
+  - name: monthly_bookings
+    expr: MEASURE(total_bookings)
+    comment: Current-month booking count (window measure for MoM comparison)
+    display_name: Monthly Bookings
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+      abbreviation: compact
+    window:
+      - order: booking_month
+        range: current
+        semiadditive: last
+
+  - name: prev_month_bookings
+    expr: MEASURE(total_bookings)
+    comment: Previous-month booking count — mirrors monthly_bookings shifted back one month
+    display_name: Prev Month Bookings
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+      abbreviation: compact
+    window:
+      - order: booking_month
+        range: current
+        offset: -1 month
+        semiadditive: last
+
+  - name: mom_booking_change
+    expr: (MEASURE(monthly_bookings) - MEASURE(prev_month_bookings)) / NULLIF(MEASURE(prev_month_bookings), 0) * 100
+    comment: Month-over-month booking growth percentage — NOT a window measure, composes two window measures via MEASURE()
+    display_name: MoM Booking Change
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 1
+    synonyms:
+      - month over month
+      - MoM growth
+      - monthly change
+
+  - name: monthly_revenue
+    expr: MEASURE(actual_revenue)
+    comment: Current-month realized revenue (window measure for MoM comparison)
+    display_name: Monthly Revenue
+    format:
+      type: currency
+      currency_code: USD
+      decimal_places:
+        type: exact
+        places: 2
+      abbreviation: compact
+    window:
+      - order: booking_month
+        range: current
+        semiadditive: last
+
+  - name: prev_month_revenue
+    expr: MEASURE(actual_revenue)
+    comment: Previous-month realized revenue — mirrors monthly_revenue shifted back one month
+    display_name: Prev Month Revenue
+    format:
+      type: currency
+      currency_code: USD
+      decimal_places:
+        type: exact
+        places: 2
+      abbreviation: compact
+    window:
+      - order: booking_month
+        range: current
+        offset: -1 month
+        semiadditive: last
+
+  - name: mom_revenue_change
+    expr: (MEASURE(monthly_revenue) - MEASURE(prev_month_revenue)) / NULLIF(MEASURE(prev_month_revenue), 0) * 100
+    comment: Month-over-month revenue growth percentage
+    display_name: MoM Revenue Change
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 1
+    synonyms:
+      - revenue growth
+      - MoM revenue growth
+      - monthly revenue change
+      - revenue per listing

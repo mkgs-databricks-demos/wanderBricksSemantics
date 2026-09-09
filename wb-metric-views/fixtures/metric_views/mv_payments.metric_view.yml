@@ -1,0 +1,148 @@
+version: 1.1
+
+source: samples.wanderbricks.payments
+
+comment: >
+  Payment collection and refund metrics for WanderBricks. Source of truth for
+  cash-basis revenue reporting. payments.amount represents cash collected by the
+  payment processor and differs from bookings.total_amount (agreed booking value)
+  due to payment timing, failures, and refunds (RULE-14). Payment volume uses
+  COUNT(*) because payment_id has 4,465 duplicates (RULE-05).
+
+joins:
+  - name: bookings
+    source: samples.wanderbricks.bookings
+    on: source.booking_id = bookings.booking_id
+    rely:
+      at_most_one_match: true
+
+dimensions:
+  - name: payment_date
+    expr: source.payment_date
+    comment: Date the payment was processed
+    display_name: Payment Date
+    format:
+      type: date
+      date_format: year_month_day
+      leading_zeros: true
+    synonyms:
+      - transaction date
+      - paid date
+      - payment created
+
+  - name: payment_status
+    expr: source.status
+    comment: "Payment lifecycle status: completed, refunded, failed"
+    display_name: Payment Status
+    synonyms:
+      - transaction status
+      - payment state
+
+  - name: payment_method
+    expr: source.payment_method
+    comment: "Payment instrument (~20% each: credit_card, paypal, apple_pay, bank_transfer, google_pay)"
+    display_name: Payment Method
+    synonyms:
+      - payment type
+      - transaction method
+      - how paid
+
+  - name: booking_status
+    expr: bookings.status
+    comment: Booking lifecycle status via bookings join - bridges payment to booking context
+    display_name: Booking Status
+    synonyms:
+      - reservation status
+
+measures:
+  - name: total_payments
+    expr: COUNT(*)
+    comment: "Total payment records (RULE-05: use COUNT(*) - payment_id has 4,465 duplicates)"
+    display_name: Total Payments
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+      abbreviation: compact
+    synonyms:
+      - payment count
+      - transaction count
+      - number of payments
+
+  - name: total_collected_revenue
+    expr: |-
+      SUM(CASE WHEN source.status = 'completed'
+               THEN source.amount ELSE 0 END)
+    comment: "Cash collected for completed payments. May differ from actual_revenue on mv_bookings (RULE-14)."
+    display_name: Total Collected Revenue
+    format:
+      type: currency
+      currency_code: USD
+      decimal_places:
+        type: exact
+        places: 2
+      abbreviation: compact
+    synonyms:
+      - collected revenue
+      - payments received
+      - cash collected
+      - cash revenue
+
+  - name: total_refunds
+    expr: |-
+      SUM(CASE WHEN source.status = 'refunded'
+               THEN source.amount ELSE 0 END)
+    comment: Total refunded payment amount
+    display_name: Total Refunds
+    format:
+      type: currency
+      currency_code: USD
+      decimal_places:
+        type: exact
+        places: 2
+      abbreviation: compact
+    synonyms:
+      - refund amount
+      - refunded payments
+      - total refunded
+
+  - name: refund_rate
+    expr: COUNT_IF(source.status = 'refunded') / NULLIF(COUNT(*), 0)
+    comment: "Share of payments refunded. WanderBricks baseline: 7.4% (RULE-05: COUNT(*) only)"
+    display_name: Refund Rate
+    format:
+      type: percentage
+      decimal_places:
+        type: exact
+        places: 1
+    synonyms:
+      - refund percentage
+      - chargeback rate
+
+  - name: failed_payment_rate
+    expr: COUNT_IF(source.status = 'failed') / NULLIF(COUNT(*), 0)
+    comment: "Share of payments that failed. WanderBricks baseline: 1.0%"
+    display_name: Failed Payment Rate
+    format:
+      type: percentage
+      decimal_places:
+        type: exact
+        places: 1
+    synonyms:
+      - failure rate
+      - payment failure percentage
+
+  - name: avg_transaction_value
+    expr: AVG(CASE WHEN source.status = 'completed' THEN source.amount END)
+    comment: Average payment amount per completed payment record
+    display_name: Avg Transaction Value
+    format:
+      type: currency
+      currency_code: USD
+      decimal_places:
+        type: exact
+        places: 2
+    synonyms:
+      - average payment
+      - average collected amount

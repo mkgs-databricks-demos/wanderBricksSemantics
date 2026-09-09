@@ -1,0 +1,136 @@
+version: 1.1
+
+source: >
+  SELECT * FROM AI_FORECAST(
+    TABLE(
+      SELECT
+        DATE(created_at) AS ds,
+        COUNT(*) AS daily_bookings,
+        SUM(total_amount) AS daily_revenue
+      FROM samples.wanderbricks.bookings
+      WHERE status IN ('confirmed', 'completed')
+      GROUP BY 1
+    ),
+    horizon => DATE_ADD(CURRENT_DATE(), 30),
+    time_col => 'ds',
+    value_col => ARRAY('daily_bookings', 'daily_revenue'),
+    prediction_interval_width => 0.95
+  )
+
+comment: >
+  Demand forecast metrics (Advanced — L200H Option A inline TVF). Uses
+  AI_FORECAST to project daily booking volume and revenue 30 days ahead.
+  Source aggregates confirmed + completed bookings by day. Each query re-runs
+  the forecast (prototyping pattern). For production, graduate to Option B
+  (materialization) or Option C (pipeline -> Delta table -> MV).
+
+dimensions:
+  - name: forecast_date
+    expr: ds
+    comment: Calendar date — historical actuals and future forecast points
+    display_name: Date
+    format:
+      type: date
+      date_format: year_month_day
+      leading_zeros: true
+    synonyms:
+      - date
+      - day
+      - forecast day
+
+measures:
+  - name: forecast_bookings
+    expr: SUM(daily_bookings_forecast)
+    comment: Forecasted daily booking count (point estimate)
+    display_name: Forecast Bookings
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+      abbreviation: compact
+    synonyms:
+      - predicted bookings
+      - demand forecast
+      - booking projection
+
+  - name: forecast_bookings_upper
+    expr: SUM(daily_bookings_upper)
+    comment: Upper bound of 95% prediction interval for booking count
+    display_name: Bookings Upper Bound
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+
+  - name: forecast_bookings_lower
+    expr: SUM(daily_bookings_lower)
+    comment: Lower bound of 95% prediction interval for booking count
+    display_name: Bookings Lower Bound
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+
+  - name: forecast_revenue
+    expr: SUM(daily_revenue_forecast)
+    comment: Forecasted daily revenue (point estimate)
+    display_name: Forecast Revenue
+    format:
+      type: currency
+      currency_code: USD
+      decimal_places:
+        type: exact
+        places: 2
+      abbreviation: compact
+    synonyms:
+      - predicted revenue
+      - revenue forecast
+      - revenue projection
+
+  - name: forecast_revenue_upper
+    expr: SUM(daily_revenue_upper)
+    comment: Upper bound of 95% prediction interval for revenue
+    display_name: Revenue Upper Bound
+    format:
+      type: currency
+      currency_code: USD
+      decimal_places:
+        type: exact
+        places: 2
+
+  - name: forecast_revenue_lower
+    expr: SUM(daily_revenue_lower)
+    comment: Lower bound of 95% prediction interval for revenue
+    display_name: Revenue Lower Bound
+    format:
+      type: currency
+      currency_code: USD
+      decimal_places:
+        type: exact
+        places: 2
+
+  - name: booking_forecast_range
+    expr: MEASURE(forecast_bookings_upper) - MEASURE(forecast_bookings_lower)
+    comment: Width of the 95% prediction interval for bookings — measures forecast uncertainty
+    display_name: Booking Forecast Range
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+
+  - name: booking_forecast_volatility
+    expr: MEASURE(booking_forecast_range) / NULLIF(MEASURE(forecast_bookings), 0)
+    comment: Relative forecast uncertainty (range / point estimate) — higher = less confident
+    display_name: Forecast Volatility
+    format:
+      type: percentage
+      decimal_places:
+        type: exact
+        places: 1
+    synonyms:
+      - uncertainty
+      - confidence width

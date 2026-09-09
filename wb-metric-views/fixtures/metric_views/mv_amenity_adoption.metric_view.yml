@@ -1,0 +1,134 @@
+version: 1.1
+
+source: >
+  SELECT
+    pa.property_id,
+    pa.amenity_id,
+    a.name AS amenity_name,
+    a.category AS amenity_category
+  FROM samples.wanderbricks.property_amenities pa
+  JOIN samples.wanderbricks.amenities a
+    ON pa.amenity_id = a.amenity_id
+
+comment: >
+  Amenity adoption and supply mix metrics (Tier 2 — SQL-as-source). Flattens
+  the property_amenities bridge table joined to the amenities dimension. Each
+  row is one property-amenity assignment. 118K rows across 38 distinct amenities.
+  Join to properties for property-level dimensions.
+
+joins:
+  - name: properties
+    source: samples.wanderbricks.properties
+    on: source.property_id = properties.property_id
+    rely:
+      at_most_one_match: false
+    joins:
+      - name: destinations
+        source: samples.wanderbricks.destinations
+        on: properties.destination_id = destinations.destination_id
+        rely:
+          at_most_one_match: true
+
+dimensions:
+  - name: amenity_name
+    expr: source.amenity_name
+    comment: Name of the amenity (e.g., Wi-Fi, Pool, Air Conditioning)
+    display_name: Amenity
+    synonyms:
+      - amenity
+      - feature
+      - perk
+
+  - name: amenity_category
+    expr: source.amenity_category
+    comment: Amenity grouping (Basic, Luxury, Safety, etc.)
+    display_name: Amenity Category
+    synonyms:
+      - category
+      - amenity type
+      - amenity group
+
+  - name: property_type
+    expr: properties.property_type
+    comment: Property listing type
+    display_name: Property Type
+    synonyms:
+      - listing type
+      - accommodation type
+
+  - name: destination_name
+    expr: properties.destinations.destination
+    comment: Destination market via properties -> destinations join
+    display_name: Destination
+    synonyms:
+      - location
+      - city
+      - market
+
+measures:
+  - name: amenity_assignments
+    expr: COUNT(*)
+    comment: Total property-amenity assignments (one row per property-amenity pair)
+    display_name: Amenity Assignments
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+      abbreviation: compact
+    synonyms:
+      - total assignments
+      - amenity count
+
+  - name: properties_with_amenity
+    expr: COUNT(DISTINCT source.property_id)
+    comment: Distinct properties that have at least one amenity assigned
+    display_name: Properties with Amenity
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+      abbreviation: compact
+    synonyms:
+      - property count
+      - adopted properties
+
+  - name: avg_amenities_per_property
+    expr: CAST(COUNT(*) AS DOUBLE) / NULLIF(COUNT(DISTINCT source.property_id), 0)
+    comment: Average number of amenities listed per property
+    display_name: Avg Amenities per Property
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 1
+    synonyms:
+      - amenity density
+      - amenities per listing
+
+  - name: luxury_amenity_rate
+    expr: COUNT_IF(source.amenity_category = 'Luxury') / NULLIF(COUNT(*), 0)
+    comment: Share of amenity assignments that are Luxury category
+    display_name: Luxury Amenity Rate
+    format:
+      type: percentage
+      decimal_places:
+        type: exact
+        places: 1
+    synonyms:
+      - luxury rate
+      - premium amenity share
+
+  - name: unique_amenity_types
+    expr: COUNT(DISTINCT source.amenity_id)
+    comment: Distinct amenity types offered (out of 38 total available)
+    display_name: Unique Amenity Types
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+    synonyms:
+      - distinct amenities
+      - amenity variety

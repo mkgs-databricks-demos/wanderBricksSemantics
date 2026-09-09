@@ -1,0 +1,131 @@
+version: 1.1
+
+source: samples.wanderbricks.page_views
+
+comment: >
+  Property listing traffic and demand-signal metrics for WanderBricks.
+  Page view volume uses COUNT(*) because view_id has 495,000 duplicates
+  across 500,000 rows (RULE-06). No direct booking_id FK exists -
+  conversion funnel analysis requires the Tier 2 mv_booking_funnel.
+
+joins:
+  - name: properties
+    source: samples.wanderbricks.properties
+    on: source.property_id = properties.property_id
+    rely:
+      at_most_one_match: true
+    joins:
+      - name: destinations
+        source: samples.wanderbricks.destinations
+        on: properties.destination_id = destinations.destination_id
+        rely:
+          at_most_one_match: true
+
+dimensions:
+  - name: view_date
+    expr: source.timestamp
+    comment: When the page view occurred
+    display_name: View Date
+    format:
+      type: date
+      date_format: year_month_day
+      leading_zeros: true
+    synonyms:
+      - page view date
+      - visit date
+      - traffic date
+
+  - name: referrer
+    expr: source.referrer
+    comment: "Traffic source that drove the page view (google, direct, email, ad)"
+    display_name: Referrer Source
+    synonyms:
+      - traffic source
+      - acquisition source
+      - channel
+
+  - name: device_type
+    expr: source.device_type
+    comment: "Device used to view the listing (Desktop, Mobile, Tablet)"
+    display_name: Device Type
+    synonyms:
+      - device
+      - platform
+      - access method
+
+  - name: property_type
+    expr: properties.property_type
+    comment: Property type via properties join
+    display_name: Property Type
+    synonyms:
+      - listing type
+      - accommodation type
+
+  - name: destination_name
+    expr: properties.destinations.destination
+    comment: Destination market via properties -> destinations nested join
+    display_name: Destination
+    synonyms:
+      - location
+      - city
+      - market
+
+measures:
+  - name: total_page_views
+    expr: COUNT(*)
+    comment: "Total property listing page views (RULE-06: COUNT(*) only - view_id has 495K duplicates)"
+    display_name: Total Page Views
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+      abbreviation: compact
+    synonyms:
+      - listing views
+      - property views
+      - page traffic
+      - view count
+
+  - name: unique_viewers
+    expr: COUNT(DISTINCT source.user_id)
+    comment: Distinct users who viewed property listings
+    display_name: Unique Viewers
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 0
+      abbreviation: compact
+    synonyms:
+      - unique visitors
+      - distinct users
+      - unique users
+
+  - name: views_per_property
+    expr: MEASURE(total_page_views) / NULLIF(COUNT(DISTINCT source.property_id), 0)
+    comment: Average page views per active property - measures listing-level demand intensity
+    display_name: Views per Property
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 1
+    synonyms:
+      - views per listing
+      - traffic per property
+      - listing demand
+
+  - name: avg_views_per_user
+    expr: MEASURE(total_page_views) / NULLIF(MEASURE(unique_viewers), 0)
+    comment: Average page views per unique user - measures engagement depth
+    display_name: Avg Views per User
+    format:
+      type: number
+      decimal_places:
+        type: exact
+        places: 1
+    synonyms:
+      - pages per visitor
+      - engagement depth
+      - views per visitor

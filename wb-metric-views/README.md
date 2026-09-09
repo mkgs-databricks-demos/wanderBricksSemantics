@@ -6,7 +6,7 @@ This bundle belongs to the `wanderBricksSemantics-care` monorepo. Its sibling bu
 
 ## What It Does
 
-1. **Defines** metric views as YAML files in `fixtures/metric_views/` (e.g., `mv_properties.metric_view.yml`).
+1. **Defines** metric views as YAML files in `fixtures/metric_views/` (10 metric views across 3 tiers).
 2. **Registers** them into a target UC schema via a generic registration job and notebook.
 3. **Queries** them using `MEASURE()` / `GROUP BY ALL` syntax.
 
@@ -23,8 +23,17 @@ wb-metric-views/
 ├── src/
 │   └── register_metric_views         # Python notebook (discovers + registers metric views)
 ├── fixtures/
-│   ├── metric_views/                  # *.metric_view.yml definitions
-│   │   └── mv_properties.metric_view.yml
+│   ├── metric_views/                  # *.metric_view.yml definitions (10 files)
+│   │   ├── mv_bookings.metric_view.yml        # Core demand + revenue + window measures
+│   │   ├── mv_properties.metric_view.yml      # Supply inventory + host metrics
+│   │   ├── mv_payments.metric_view.yml        # Cash-basis revenue
+│   │   ├── mv_reviews.metric_view.yml         # Satisfaction + NPS
+│   │   ├── mv_host_performance.metric_view.yml # Host productivity + NPS
+│   │   ├── mv_page_views.metric_view.yml      # Traffic demand
+│   │   ├── mv_booking_funnel.metric_view.yml  # Tier 2: conversion funnel
+│   │   ├── mv_amenity_adoption.metric_view.yml # Tier 2: amenity mix
+│   │   ├── mv_customer_support.metric_view.yml # Tier 2: support metrics
+│   │   └── mv_demand_forecast.metric_view.yml  # Advanced: AI forecast
 │   └── sessions/                      # Session summaries
 │       ├── INDEX.md
 │       └── ...
@@ -51,16 +60,41 @@ wb-metric-views/
    ```
    Use `bundle summary` to find the actual deployed schema name (dev mode auto-prefixes with `dev_<username>_`).
 
-## Current Metric Views
+## Current Metric Views (10)
 
-| Metric View | Source Table | Dimensions | Measures |
+### Tier 1 — Direct Table Source
+
+| Metric View | Source | Dims | Measures | Highlights |
+| --- | --- | --- | --- | --- |
+| `mv_bookings` | bookings | 12 | 24 | Window measures (trailing 30d, MoM, cumulative revenue) |
+| `mv_properties` | properties | 13 | 7 | Host portfolio metrics, destinations snowflake |
+| `mv_payments` | payments | 4 | 6 | Cash-basis revenue, refund/failure rates |
+| `mv_reviews` | reviews | 6 | 5 | NPS-style `sentiment_tier` + `nps_score` |
+| `mv_host_performance` | bookings | 8 | 8 | `host_quality_tier` + `host_nps` (host-level NPS) |
+| `mv_page_views` | page_views | 5 | 4 | Traffic demand signals |
+
+### Tier 2 — SQL-as-Source
+
+| Metric View | SQL Pattern | Dims | Measures |
 | --- | --- | --- | --- |
-| `mv_properties` | `samples.wanderbricks.properties` | property_type, bedrooms, bathrooms, created_at | total_properties, avg_base_price, total_guest_capacity |
+| `mv_booking_funnel` | 30-day page-view→booking attribution | 4 | 6 |
+| `mv_amenity_adoption` | Bridge table flattening | 4 | 5 |
+| `mv_customer_support` | ARRAY extraction, sentiment analysis | 6 | 5 |
+
+### Advanced
+
+| Metric View | Pattern | Status |
+| --- | --- | --- |
+| `mv_demand_forecast` | `AI_FORECAST` inline TVF (L200H Option A) | Pending feature enablement |
 
 ## Adding a New Metric View
 
 1. Create a new `<name>.metric_view.yml` file in `fixtures/metric_views/`.
-2. Follow the YAML structure in `mv_properties.metric_view.yml` as a template.
+2. Follow the YAML structure in existing files as templates:
+   - **Direct table source:** `mv_bookings.metric_view.yml` (joins, window measures)
+   - **SQL-as-source:** `mv_customer_support.metric_view.yml` (CAST, ARRAY extraction)
+   - **NPS pattern:** `mv_reviews.metric_view.yml` (CASE dimension + composable MEASURE)
+   - **AI function:** `mv_demand_forecast.metric_view.yml` (inline TVF)
 3. Deploy and run the registration job — it auto-discovers all `*.metric_view.yml` files.
 
 ## Documentation
